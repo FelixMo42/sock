@@ -2,7 +2,7 @@
 const app = require("express")()
 app.use("/client", require("express").static('client'))
 
-app.get("/tick", function (req, res) {
+app.get("/tick", (req, res) => {
     res.send('tick')
 
     console.log("tick")
@@ -14,13 +14,21 @@ app.get("/tick", function (req, res) {
 const server = require("http").Server(app)
 const io = require("socket.io")(server, { pingTimeout: 60000 })
 
-
 function tick() {
+    Promise.all(
+        [...clients].map(agent => new Promise(resolve => agent.emit("turn", move => resolve([agent, move]))))
+    ).then(moves => 
+        moves.forEach(([agent, move]) => {
+            let data = agents.get(agent.id)
+            
+            data.x = move.x
+            data.y = move.y
 
-    [...clients].map(agent => new Promise(resolve =>
-        agent.emit("turn", console.log)
-    ))
+            console.log(data)
 
+            agent.emit("update", agent.id, data)
+        })
+    )
 }
 
 // a map to keep track of all the users
@@ -49,8 +57,8 @@ io.on("connect", agent => {
     // add the new agent to the map
     agents.set(agent.id, data)
 
-    // tell all the outher agents that a new agent has connected
-    agent.broadcast.emit("onAgentJoin", data)
+    // tell all the agents that a new agent has connected (including the new agent)
+    io.emit("onAgentJoin", data)
 
     agent.on("disconnect", reason => {
         io.emit("onAgentLeft", agent.id)
