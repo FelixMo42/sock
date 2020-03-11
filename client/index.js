@@ -14,8 +14,12 @@ function windowResized() {
 }
 
 function updateTarget(x, y) {
-    target.x = x
-    target.y = y
+    let vec = createVector(x - player.x, y - player.y)
+    
+    vec.limit(100)
+
+    target.x = player.x + vec.x
+    target.y = player.y + vec.y
 }
 
 function draw() {
@@ -27,14 +31,13 @@ function draw() {
         ellipse(x, y, 20, 20)
     })
 
-
     if (mouseIsPressed) {
         updateTarget(mouseX, mouseY)
     }
 
     // draw you target location
     stroke("blue")
-    ellipse(target.x, target.y, 20, 20)
+    ellipse(target.x, target.y, 15, 15)
 }
 
 function reset() {
@@ -66,5 +69,9 @@ connection.on("turn", callback => {
 })
 
 connection.on("update", (id, position) => {
+    if (id == connection.id) {
+        player = position
+    }
+
     agents.set(id, position)
 })

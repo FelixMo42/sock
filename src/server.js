@@ -14,17 +14,21 @@ app.get("/tick", (req, res) => {
 const server = require("http").Server(app)
 const io = require("socket.io")(server, { pingTimeout: 60000 })
 
+function getPlayerMove(agent) {
+    return new Promise(resolve => agent.emit("turn", move => resolve([agent, move])))
+}
+
+function getPlayerMoves() {
+    return Promise.all([...clients].map(getPlayerMove))
+}
+
 function tick() {
-    Promise.all(
-        [...clients].map(agent => new Promise(resolve => agent.emit("turn", move => resolve([agent, move]))))
-    ).then(moves => 
+    getPlayerMoves().then(moves => 
         moves.forEach(([agent, move]) => {
             let data = agents.get(agent.id)
             
             data.x = move.x
             data.y = move.y
-
-            console.log(data)
 
             agent.emit("update", agent.id, data)
         })
