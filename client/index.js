@@ -2,8 +2,14 @@ const connection = io(window.location.search)
 
 let agents = new Map()
 
-let player = {x: 0, y: 0}
-let target = {x: 0, y: 0}
+let meter = 60
+
+let player = { x: 0, y: 0 }
+let target = { type: "move", x: 0, y: 0 }
+
+function div(a, b) {
+    return (a - a % b) / b
+}
 
 function setup() {
     createCanvas(windowWidth, windowHeight)
@@ -14,12 +20,8 @@ function windowResized() {
 }
 
 function updateTarget(x, y) {
-    let vec = createVector(x - player.x, y - player.y)
-    
-    vec.limit(100)
-
-    target.x = player.x + vec.x
-    target.y = player.y + vec.y
+    target.x = x
+    target.y = y
 }
 
 function draw() {
@@ -28,16 +30,16 @@ function draw() {
     // draw all the agents
     stroke("black")
     agents.forEach(({x, y}) => {
-        ellipse(x, y, 20, 20)
+        ellipse(x * meter, y * meter, 20, 20)
     })
 
     if (mouseIsPressed) {
-        updateTarget(mouseX, mouseY)
+        updateTarget( div(mouseX, meter), div(mouseY, meter) )
     }
 
     // draw you target location
     stroke("blue")
-    ellipse(target.x, target.y, 15, 15)
+    ellipse(target.x * meter, target.y * meter, 15, 15)
 }
 
 function reset() {
@@ -51,8 +53,6 @@ function addAgent(agent) {
     console.log(`meet ${agent.name}!`)
     agents.set(agent.id, agent)
 }
-
-// connection.on("connect", () => console.log("hi"))
 
 connection.on("disconnect", reset)
 
@@ -69,8 +69,11 @@ connection.on("turn", callback => {
 })
 
 connection.on("update", (id, position) => {
+    console.log(position)
+
     if (id == connection.id) {
-        player = position
+        player.x = position.x
+        player.y = position.y
     }
 
     agents.set(id, position)

@@ -1,11 +1,8 @@
 // set up express app
 const app = require("express")()
 app.use("/client", require("express").static('client'))
-
 app.get("/tick", (req, res) => {
     res.send('tick')
-
-    console.log("tick")
 
     tick()
 })
@@ -14,68 +11,64 @@ app.get("/tick", (req, res) => {
 const server = require("http").Server(app)
 const io = require("socket.io")(server, { pingTimeout: 60000 })
 
-function getPlayerMove(agent) {
-    return new Promise(resolve => agent.emit("turn", move => resolve([agent, move])))
+const send = event => id => (...data) => clients.get(id).emit(event, ...data)
+const emit = event => (...data) => io.emit(event, ...data)
+
+const emitUpdate = emit("update")
+const getTurn = send("turn")
+
+let getAgentMove = agent => new Promise(resolve => getTurn(agent.id)(move => resolve([agent, move])))
+
+let getAgentsMoves = agents => Promise.all([...agents.values()].map(getAgentMove))
+
+let applyEffect = (agent, effect) => {
+    if (effect.type == "move") {
+        agent.x = effect.x
+        agent.y = effect.y
+    }
 }
 
-function getPlayerMoves() {
-    return Promise.all([...clients].map(getPlayerMove))
-}
+let tick = () => getAgentsMoves(agents).then(moves => moves.forEach(([agent, move]) => {
+    applyEffect(agent, move)
 
-function tick() {
-    getPlayerMoves().then(moves => 
-        moves.forEach(([agent, move]) => {
-            let data = agents.get(agent.id)
-            
-            data.x = move.x
-            data.y = move.y
+    emitUpdate(agent.id, agent)
+}))
 
-            agent.emit("update", agent.id, data)
-        })
-    )
-}
-
-// a map to keep track of all the users
+// maps to keep track of all the users
 const agents = new Map()
-const clients = new Set()
+const clients = new Map()
 
 // plug the authenication in here
 io.use((agent, next) => next())
 
 // handle an new user connecting
-io.on("connect", agent => {
-    clients.add(agent)
-
+io.on("connect", client => {
     // tell the new agent of all the outher agents on ther server
     for (let outher of agents.values()) {
-        agent.emit("onAgentJoin", outher)
+        client.emit("onAgentJoin", outher)
     }
 
     // what data do we want to store about the agent    
-    let data = {
-        name: agent.handshake.query.name,
-        id: agent.id,
+    let agent = {
+        name: client.handshake.query.name,
+        id: client.id,
         x: 0, y: 0
     }
 
     // add the new agent to the map
-    agents.set(agent.id, data)
+    agents.set(client.id, agent)
+
+    // add the socket to are list of sockets
+    clients.set(client.id, client)
 
     // tell all the agents that a new agent has connected (including the new agent)
-    io.emit("onAgentJoin", data)
+    io.emit("onAgentJoin", agent)
 
-    agent.on("disconnect", reason => {
-        io.emit("onAgentLeft", agent.id)
+    client.on("disconnect", reason => {
+        io.emit("onAgentLeft", client.id)
 
-        clients.delete(agent)
+        clients.delete(client)
         agents.delete(agent.id)
-    })
-
-    agent.on("update", position => {
-        data.x = position.x
-        data.y = position.y
-
-        agent.broadcast.emit("update", agent.id, position)
     })
 })
 
