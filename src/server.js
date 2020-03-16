@@ -11,9 +11,9 @@ app.get("/tick", (req, res) => {
 const server = require("http").Server(app)
 const io = require("socket.io")(server, { pingTimeout: 60000 })
 
+// set up the socket.io events
 const send = event => id => (...data) => clients.get(id).emit(event, ...data)
 const emit = event => (...data) => io.emit(event, ...data)
-
 const emitUpdate = emit("update")
 const getTurn = send("turn")
 
@@ -23,20 +23,44 @@ let getAgentsMoves = agents => Promise.all([...agents.values()].map(getAgentMove
 
 let applyEffect = (agent, effect) => {
     if (effect.type == "move") {
-        agent.x = effect.x
-        agent.y = effect.y
+        agent.target.x = effect.x
+        agent.target.y = effect.y
     }
 }
 
-let tick = () => getAgentsMoves(agents).then(moves => moves.forEach(([agent, move]) => {
-    applyEffect(agent, move)
+let tick = async () => {
+    let moves = await getAgentsMoves(agents)
+    
+    // apply the effects
+    moves.forEach(([agent, move]) => applyEffect(agent, move))
 
-    emitUpdate(agent.id, agent)
-}))
+    // move around agents that need to be moved
+    moves.forEach(([agent]) => {
+        // its not moving, so were done here
+        if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) {console.log("same"); return}
 
+        // make sure the new position dosent overlap with anything
+        for (let object of objects.values()) {
+            if (
+                agent.target.x >= object.x && agent.target.x <= object.x + object.width && 
+                agent.target.y >= object.y && agent.target.y <= object.y + object.height
+            ) {console.log("overlap"); return}
+        }
+
+        // update the agents positions
+        agent.position.x = agent.target.x
+        agent.position.y = agent.target.y
+
+        // tell the world news of the agents changes
+        emitUpdate(agent.id, agent)
+    })
+}
 // maps to keep track of all the users
 const agents = new Map()
 const clients = new Map()
+const objects = new Map()
+
+objects.set("0", { id: 0, x: 5, y: 0, width: 1, height: 10 })
 
 // plug the authenication in here
 io.use((agent, next) => next())
@@ -48,11 +72,17 @@ io.on("connect", client => {
         client.emit("onAgentJoin", outher)
     }
 
+    // tell the new agent of all the objects
+    for (let object of objects.values()) {
+        client.emit("onNewObject", object)
+    }
+
     // what data do we want to store about the agent    
     let agent = {
         name: client.handshake.query.name,
+        position: {x: 0, y: 0},
+        target: {x: 0, y: 0},
         id: client.id,
-        x: 0, y: 0
     }
 
     // add the new agent to the map
@@ -72,5 +102,5 @@ io.on("connect", client => {
     })
 })
 
-// listen in on out fav port
+// listen in on out tots fav port
 server.listen(4242)
