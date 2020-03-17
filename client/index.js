@@ -1,11 +1,37 @@
 const connection = io(window.location.search)
 
-let agents = new Map()
-let objects = new Map()
+const agents = new Map()
+const objects = new Map()
 
-let meter = 60
+const meter = 60
+const center = meter / 2
 
-let target = { type: "move", x: 0, y: 0 }
+const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
+
+class Queue {
+    list = []
+
+    callback
+
+    set(list) {
+        this.list = list
+
+        if (this.callback) {
+            this.callback( this.list.pop() )
+            this.callback = null
+        }
+    }
+
+    next(callback) {
+        if (this.list.length > 0) {
+            callback( this.list.pop() )
+        } else {
+            this.callback = callback
+        }
+    }
+}
+
+const queue = new Queue()
 
 function div(a, b) {
     return (a - a % b) / b
@@ -19,30 +45,35 @@ function windowResized() {
     resizeCanvas(windowWidth, windowHeight)
 }
 
-function updateTarget(x, y) {
-    target.x = x
-    target.y = y
-}
-
 function draw() {
-    update()
+    // clear the screen
     clear()
 
     // draw all the agents and objects
     stroke("black")
-    agents.forEach(({position: {x, y}}) => ellipse(x * meter, y * meter, 20, 20))
+    agents.forEach(({position: {x, y}}) => ellipse(x * meter + center, y * meter + center, 30, 30))
     objects.forEach(({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter))
 
-    // draw you target location
+    // draw you target locations
+    noFill()
     stroke("blue")
-    ellipse(target.x * meter, target.y * meter, 15, 15)
+    queue.list.forEach(({x, y}) => ellipse(x * meter + center, y * meter + center, 20, 20))
+
+    // hightlight the tile with the mouse over it
+    rect(div(mouseX, meter) * meter + 5, div(mouseY, meter) * meter + 5, meter - 10, meter - 10, 10)
 }
 
-function update() {
+function getPlayer() {
+    return agents.get(connection.id)
+}
+
+function mouseReleased() {
     // update the target if the mouse is down
-    if (mouseIsPressed) {
-        updateTarget( div(mouseX, meter), div(mouseY, meter) )
-    }
+    queue.set([{
+        type: "move",
+        x: div(mouseX, meter),
+        y: div(mouseY, meter)
+    }])
 }
 
 function reset() {
@@ -51,7 +82,6 @@ function reset() {
 }
 
 function addAgent(agent) {
-    console.log(`meet ${agent.name}!`)
     agents.set(agent.id, agent)
 }
 
@@ -59,14 +89,10 @@ function addObject(object) {
     objects.set(object.id, object)
 }
 
+// add socket.io callbacks
 connection.on("disconnect", reset)
-
 connection.on("onNewObject", addObject)
-
 connection.on("onAgentJoin", addAgent)
-
 connection.on("onAgentLeft", id => agents.delete(id))
-
-connection.on("turn", callback => callback(target))
-
+connection.on("turn", callback => queue.next(callback))
 connection.on("update", (id, agent) => agents.set(id, agent))

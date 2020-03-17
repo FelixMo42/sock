@@ -37,15 +37,20 @@ let tick = async () => {
     // move around agents that need to be moved
     moves.forEach(([agent]) => {
         // its not moving, so were done here
-        if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) {console.log("same"); return}
+        if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
         // make sure the new position dosent overlap with anything
         for (let object of objects.values()) {
             if (
-                agent.target.x >= object.x && agent.target.x <= object.x + object.width && 
-                agent.target.y >= object.y && agent.target.y <= object.y + object.height
-            ) {console.log("overlap"); return}
+                agent.target.x >= object.x && agent.target.x < object.x + object.width &&
+                agent.target.y >= object.y && agent.target.y < object.y + object.height
+            ) return
         }
+
+        if (
+            Math.abs( agent.position.x - agent.target.x ) > 1 &&
+            Math.abs( agent.position.y - agent.target.y ) > 1
+        ) return
 
         // update the agents positions
         agent.position.x = agent.target.x
@@ -55,11 +60,13 @@ let tick = async () => {
         emitUpdate(agent.id, agent)
     })
 }
-// maps to keep track of all the users
+
+// maps to keep track of all the users and outher stuff
 const agents = new Map()
 const clients = new Map()
 const objects = new Map()
 
+// add an object for testing perpuses
 objects.set("0", { id: 0, x: 5, y: 0, width: 1, height: 10 })
 
 // plug the authenication in here
