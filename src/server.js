@@ -1,11 +1,8 @@
 // set up express app
 const app = require("express")()
 app.use("/client", require("express").static('client'))
-app.get("/tick", (req, res) => {
-    res.send('tick')
-
-    tick()
-})
+app.get("/tick", (req, res) => { res.send('tick'); tick() })
+app.get("/tick_periodic", (req, res) => { res.send('tick'); setInterval(tick, 1000) })
 
 // create the socket.io instance
 const server = require("http").Server(app)
@@ -47,8 +44,9 @@ let tick = async () => {
             ) return
         }
 
+        // make sure the agent is only moving to an adjacent square
         if (
-            Math.abs( agent.position.x - agent.target.x ) > 1 &&
+            Math.abs( agent.position.x - agent.target.x ) > 1 ||
             Math.abs( agent.position.y - agent.target.y ) > 1
         ) return
 

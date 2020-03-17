@@ -1,0 +1,13 @@
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script src="api.js"></script>
+<script>
+
+function onTurn(callback) {
+    callback({
+        type: "move",
+        x: getPlayer().position.x + 1,
+        y: getPlayer().position.y + 1
+    })
+}
+
+</script>

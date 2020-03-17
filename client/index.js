@@ -1,20 +1,30 @@
-const connection = io(window.location.search)
-
-const agents = new Map()
-const objects = new Map()
-
-const meter = 60
-const center = meter / 2
-
-const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
-
-class Queue {
+class Stream {
     list = []
-
-    callback
 
     set(list) {
         this.list = list
+
+        this.triggerCallback()
+    }
+
+    add(item) {
+        this.list.push(item)
+
+        this.triggerCallback()
+    }
+
+    forEach(callback) {
+        this.list.forEach(callback)
+    }
+
+    map(callback) {
+        return this.list.map(callback)
+    }
+
+    triggerCallback() {
+        if (this.list.length > 0) {
+            return
+        }
 
         if (this.callback) {
             this.callback( this.list.pop() )
@@ -31,7 +41,12 @@ class Queue {
     }
 }
 
-const queue = new Queue()
+const moves = new Stream()
+
+const meter = 60
+const center = meter / 2
+
+const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
 
 function div(a, b) {
     return (a - a % b) / b
@@ -57,42 +72,21 @@ function draw() {
     // draw you target locations
     noFill()
     stroke("blue")
-    queue.list.forEach(({x, y}) => ellipse(x * meter + center, y * meter + center, 20, 20))
+    moves.forEach(({x, y}) => ellipse(x * meter + center, y * meter + center, 20, 20))
 
     // hightlight the tile with the mouse over it
     rect(div(mouseX, meter) * meter + 5, div(mouseY, meter) * meter + 5, meter - 10, meter - 10, 10)
 }
 
-function getPlayer() {
-    return agents.get(connection.id)
-}
-
 function mouseReleased() {
     // update the target if the mouse is down
-    queue.set([{
+    moves.set([{
         type: "move",
         x: div(mouseX, meter),
         y: div(mouseY, meter)
     }])
 }
 
-function reset() {
-    agents.clear()
-    objects.clear()
+function onTurn(callback) {
+    moves.next(callback)
 }
-
-function addAgent(agent) {
-    agents.set(agent.id, agent)
-}
-
-function addObject(object) {
-    objects.set(object.id, object)
-}
-
-// add socket.io callbacks
-connection.on("disconnect", reset)
-connection.on("onNewObject", addObject)
-connection.on("onAgentJoin", addAgent)
-connection.on("onAgentLeft", id => agents.delete(id))
-connection.on("turn", callback => queue.next(callback))
-connection.on("update", (id, agent) => agents.set(id, agent))
