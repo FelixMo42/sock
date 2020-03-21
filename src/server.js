@@ -1,8 +1,6 @@
 // set up express app
 const app = require("express")()
 app.use("/client", require("express").static('client'))
-app.get("/tick", (req, res) => { res.send('tick'); tick() })
-app.get("/tick_periodic", (req, res) => { res.send('tick'); setInterval(tick, 1000) })
 
 // create the socket.io instance
 const server = require("http").Server(app)
@@ -59,6 +57,18 @@ let tick = async () => {
     })
 }
 
+let wait = ms => new Promise((r, j)=>setTimeout(r, ms))
+
+let play = async () => {
+    while (true) {
+        await wait(1000)
+
+        console.log("start turn")
+        await tick()
+        console.log("end turn")
+    }
+}
+
 // maps to keep track of all the users and outher stuff
 const agents = new Map()
 const clients = new Map()
@@ -72,6 +82,8 @@ io.use((agent, next) => next())
 
 // handle an new user connecting
 io.on("connect", client => {
+    console.log("new client")
+
     // tell the new agent of all the outher agents on ther server
     for (let outher of agents.values()) {
         client.emit("onAgentJoin", outher)
@@ -109,3 +121,6 @@ io.on("connect", client => {
 
 // listen in on out tots fav port
 server.listen(4242)
+
+// run the main game logic
+play()
