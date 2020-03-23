@@ -6,15 +6,19 @@ app.use("/client", require("express").static('client'))
 const server = require("http").Server(app)
 const io = require("socket.io")(server, { pingTimeout: 60000 })
 
-// set up the socket.io events
-const send = event => id => (...data) => clients.get(id).emit(event, ...data)
-const emit = event => (...data) => io.emit(event, ...data)
-const emitUpdate = emit("update")
-const getTurn = send("turn")
+const uuid = require("uuid")
+const crypto = require("crypto")
 
-let getAgentMove = agent => new Promise(resolve => getTurn(agent.id)(move => resolve([agent, move])))
+let getAgentsMoves = agents => {
+    // generate a random id for the turn
+    let id = crypto.randomBytes(10).toString('hex')
 
-let getAgentsMoves = agents => Promise.all([...agents.values()].map(getAgentMove))
+    // tell it to everyone
+    io.emit("turn", id)
+
+    // 
+
+}
 
 let applyEffect = (agent, effect) => {
     if (effect.type == "move") {
@@ -24,6 +28,7 @@ let applyEffect = (agent, effect) => {
 }
 
 let tick = async () => {
+    // ask the agents what they want to do
     let moves = await getAgentsMoves(agents)
     
     // apply the effects
@@ -53,16 +58,15 @@ let tick = async () => {
         agent.position.y = agent.target.y
 
         // tell the world news of the agents changes
-        emitUpdate(agent.id, agent)
+        io.emit("update", agent.id, agent)
     })
 }
 
-let wait = ms => new Promise((r, j)=>setTimeout(r, ms))
+let wait = ms => new Promise(done => setTimeout(done, ms))
 
 let play = async () => {
     while (true) {
         await wait(1000)
-
         console.log("start turn")
         await tick()
         console.log("end turn")
@@ -75,24 +79,20 @@ const clients = new Map()
 const objects = new Map()
 
 // add an object for testing perpuses
-objects.set("0", { id: 0, x: 5, y: 0, width: 1, height: 10 })
+objects.set(0, { id: 0, x: 5, y: 0, width: 1, height: 10 })
 
 // plug the authenication in here
 io.use((agent, next) => next())
 
 // handle an new user connecting
 io.on("connect", client => {
-    console.log("new client")
-
     // tell the new agent of all the outher agents on ther server
-    for (let outher of agents.values()) {
+    for (let outher of agents.values())
         client.emit("onAgentJoin", outher)
-    }
 
     // tell the new agent of all the objects
-    for (let object of objects.values()) {
+    for (let object of objects.values())
         client.emit("onNewObject", object)
-    }
 
     // what data do we want to store about the agent    
     let agent = {
@@ -102,7 +102,7 @@ io.on("connect", client => {
         id: client.id,
     }
 
-    // add the new agent to the map
+    // add the new agent to the list of active agents
     agents.set(client.id, agent)
 
     // add the socket to are list of sockets
@@ -111,9 +111,12 @@ io.on("connect", client => {
     // tell all the agents that a new agent has connected (including the new agent)
     io.emit("onAgentJoin", agent)
 
+    // handle a client disconnecting
     client.on("disconnect", reason => {
+        // tell everyone else that someone left
         io.emit("onAgentLeft", client.id)
 
+        // remove all the refrences to the players
         clients.delete(client)
         agents.delete(agent.id)
     })

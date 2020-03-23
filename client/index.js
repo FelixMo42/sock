@@ -63,7 +63,6 @@ function windowResized() {
     resizeCanvas(windowWidth, windowHeight)
 }
 
-
 function getCameraPosition() {
     return [
         -getPlayer().position.x * meter + width / 2,
