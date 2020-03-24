@@ -5,25 +5,45 @@ const barter = (url, ask) => {
 
     const QUESTION = 0
     const RESPONSE = 1
+    const ANNOUNCE = 2
 
     ws.onopen = event => console.log("open", event)
-    ws.onclose = event => console.log("close", data)
+    ws.onclose = event => console.log("close", event)
     ws.onerror = event => console.log("error", event)
 
     ws.onmessage = event => {
-        let [type, id, question] = event.data.split("\n")
+        let [type, data, id] = event.data.split("\n")
 
-        if (type == RESPONSE)
-            callbacks.get(id)(data)
+        let body = JSON.parse(data)
 
-        if (type == QUESTION)
-            ask(question, response => ws.send(`${id}\n${response}`))
+        // were just being told something
+        if (type == ANNOUNCE) ask(body, () => console.error("can not awnser an announcment."))
+
+        // are question was awnsered
+        if (type == RESPONSE) callbacks.get(id)(body)
+
+        // we were asked a question
+        if (type == QUESTION) ask(body, response => ws.send(`${RESPONSE}\n${response}\n${id}`))
     }
 
     return (question, respond) => {
-        let id = uuidv1()
-        callbacks.set(id, respond)
+        if (respond !== undefined) {
+            let id = uuidv1()
+            callbacks.set(id, respond)
 
-        ws.send(`${QUESTION}\n${id}\n${question}`)
+            ws.send(`${QUESTION}\n${question}\n${id}`)
+        } else {
+            ws.send(`${ANNOUNCE}\n${question}`)
+        }
+    }
+}
+
+const eventManager = callbacks => {
+    let events = Object.fromEntries(callbacks((key, callback) => [key, callback]))
+
+    return ([event, ...data], callback) => {
+        console.log(event)
+        
+        events[event](...data)
     }
 }

@@ -1,24 +1,59 @@
+const express = require("express")
+const http = require("http")
+const barter = require("./barter")
+const uuid = require("uuid").v1
+
 // set up express app
-const app = require("express")()
-app.use("/client", require("express").static('client'))
+const app = express()
+app.use("/client", express.static('client'))
 
-// create the socket.io instance
-const server = require("http").Server(app)
-const io = require("socket.io")(server, { pingTimeout: 60000 })
+const server = http.createServer(app)
 
-const uuid = require("uuid")
-const crypto = require("crypto")
+const emit = barter(server, (client, question) => {
+    if (question == barter.clientJoined) addAgent(client)
 
-let getAgentsMoves = agents => {
-    // generate a random id for the turn
-    let id = crypto.randomBytes(10).toString('hex')
+    if (question == barter.clientLeft) removeAgent(client)
+})
 
-    // tell it to everyone
-    io.emit("turn", id)
+let addAgent = client => {
+    // tell the new agent of all the objects in the world
+    for (let object of objects.values()) client(["newObject", object])
 
-    // 
+    // tell the new agent of all the outher agents on the server
+    for (let outher of agents.values()) client(["agentJoin", outher])
 
+    // what data do we want to store about the agent?
+    let agent = {
+        position: {x: 0, y: 0},
+        target: {x: 0, y: 0},
+        id: uuid(),
+    }
+
+    // add the new agent to the list of agents
+    agents.set(agent.id, agent)
+
+    // add the socket to are list of sockets
+    clients.set(client, agent)
+
+    // tell all the agents that a new agent has connected (including the new agent)
+    emit(["agentJoin", agent])
 }
+
+let removeAgent = client => {
+    // tell the gang that the clients agent left
+    emit(["onAgentLeft", clients.get(client).id])
+
+    // remove the agent from the list of agents
+    agents.delete(clients.get(client).id)
+
+    // remove the client from are list of active clients
+    clients.delete(client)
+}
+
+let getAgentsMoves = agents => new Promise(ret => {
+
+
+})
 
 let applyEffect = (agent, effect) => {
     if (effect.type == "move") {
@@ -81,48 +116,7 @@ const objects = new Map()
 // add an object for testing perpuses
 objects.set(0, { id: 0, x: 5, y: 0, width: 1, height: 10 })
 
-// plug the authenication in here
-io.use((agent, next) => next())
-
-// handle an new user connecting
-io.on("connect", client => {
-    // tell the new agent of all the outher agents on ther server
-    for (let outher of agents.values())
-        client.emit("onAgentJoin", outher)
-
-    // tell the new agent of all the objects
-    for (let object of objects.values())
-        client.emit("onNewObject", object)
-
-    // what data do we want to store about the agent    
-    let agent = {
-        name: client.handshake.query.name,
-        position: {x: 0, y: 0},
-        target: {x: 0, y: 0},
-        id: client.id,
-    }
-
-    // add the new agent to the list of active agents
-    agents.set(client.id, agent)
-
-    // add the socket to are list of sockets
-    clients.set(client.id, client)
-
-    // tell all the agents that a new agent has connected (including the new agent)
-    io.emit("onAgentJoin", agent)
-
-    // handle a client disconnecting
-    client.on("disconnect", reason => {
-        // tell everyone else that someone left
-        io.emit("onAgentLeft", client.id)
-
-        // remove all the refrences to the players
-        clients.delete(client)
-        agents.delete(agent.id)
-    })
-})
-
-// listen in on out tots fav port
+// listen in on our fav port
 server.listen(4242)
 
 // run the main game logic
