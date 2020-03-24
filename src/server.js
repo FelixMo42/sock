@@ -11,7 +11,6 @@ const server = http.createServer(app)
 
 const emit = barter(server, (client, question) => {
     if (question == barter.clientJoined) addAgent(client)
-
     if (question == barter.clientLeft) removeAgent(client)
 })
 
@@ -53,8 +52,18 @@ let removeAgent = client => {
     clients.delete(client)
 }
 
-let getAgentsMoves = agents => new Promise(ret => {
+let getAgentsMoves = () => new Promise(done => {
+    let moves = new Map()
 
+    let sent = emit(["turn"], (client, move) => {
+        moves.set( clients.get(client), move)
+        
+        if (moves.size == sent.size) {
+            done(moves.entries())
+        }
+    })
+
+    if (clients.size == 0) done([])
 })
 
 let applyEffect = (agent, effect) => {
@@ -66,13 +75,13 @@ let applyEffect = (agent, effect) => {
 
 let tick = async () => {
     // ask the agents what they want to do
-    let moves = await getAgentsMoves(agents)
+    let moves = await getAgentsMoves()
     
     // apply the effects
-    moves.forEach(([agent, move]) => applyEffect(agent, move))
+    for (let [agent, move] of moves) applyEffect(agent, move)
 
     // move around agents that need to be moved
-    moves.forEach(([agent]) => {
+    for (let [agent] of moves) {
         // its not moving, so were done here
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
@@ -96,7 +105,7 @@ let tick = async () => {
 
         // tell the world news of the agents changes
         io.emit("update", agent.id, agent)
-    })
+    }
 }
 
 let wait = ms => new Promise(done => setTimeout(done, ms))

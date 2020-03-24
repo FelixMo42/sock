@@ -5,6 +5,7 @@ let barter = module.exports = (server, ask) => {
     const socket = new WebSocket.Server({ server })
 
     const callbacks = new Map()
+    const clients = new Set()
 
     const QUESTION = 0
     const RESPONSE = 1
@@ -22,6 +23,8 @@ let barter = module.exports = (server, ask) => {
             }
         }
 
+        clients.add(send)
+
         ask(send, barter.clientJoined, () => {})
 
         client.on("message", event => {
@@ -34,13 +37,15 @@ let barter = module.exports = (server, ask) => {
             if (type == ANNOUNCE) ask( body )
 
             // this is a response to a question we asked
-            if (type == RESPONSE) callbacks.get(id)( body )
+            if (type == RESPONSE) callbacks.get(id)( send, body )
 
             // were being asked a question
-            if (type == QUESTION) ask(body, response => client.send(`${RESPONSE}\n${JSON.stringify(response)}\n${id}`))
+            if (type == QUESTION) ask(body, response => client.send(`${RESPONSE}\n${JSON.parse(response)}\n${id}`))
         })
 
-        client.on("close", send)
+        client.on("close", () => {
+            clients.remove(send)
+        })
     })
 
     return (question, respond) => {
@@ -61,6 +66,9 @@ let barter = module.exports = (server, ask) => {
                 }
             })
         }
+
+        // return a copy of all the sets that we sent the question out to
+        return new Set(clients)
     }
 }
 

@@ -23,7 +23,7 @@ const barter = (url, ask) => {
         if (type == RESPONSE) callbacks.get(id)(body)
 
         // we were asked a question
-        if (type == QUESTION) ask(body, response => ws.send(`${RESPONSE}\n${response}\n${id}`))
+        if (type == QUESTION) ask(body, response => ws.send(`${RESPONSE}\n${JSON.stringify(response)}\n${id}`))
     }
 
     return (question, respond) => {
