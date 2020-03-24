@@ -29,6 +29,9 @@ let addAgent = client => {
         id: uuid(),
     }
 
+    // tell the client their id
+    client(["connect", agent.id])
+
     // add the new agent to the list of agents
     agents.set(agent.id, agent)
 
@@ -51,7 +54,6 @@ let removeAgent = client => {
 }
 
 let getAgentsMoves = agents => new Promise(ret => {
-
 
 })
 

@@ -41,9 +41,5 @@ const barter = (url, ask) => {
 const eventManager = callbacks => {
     let events = Object.fromEntries(callbacks((key, callback) => [key, callback]))
 
-    return ([event, ...data], callback) => {
-        console.log(event)
-        
-        events[event](...data)
-    }
+    return ([event, ...data], callback) => events[event](...data, callback)
 }

@@ -64,10 +64,14 @@ function windowResized() {
 }
 
 function getCameraPosition() {
-    return [
-        -getPlayer().position.x * meter + width / 2,
-        -getPlayer().position.y * meter + height / 2
-    ]
+    if ( hasPlayer() ) {
+        return [
+            -getPlayer().position.x * meter + width / 2,
+            -getPlayer().position.y * meter + height / 2
+        ]
+    } else {
+        return [ 0, 0 ]
+    }
 }
 
 function draw() {

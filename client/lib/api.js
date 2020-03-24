@@ -33,7 +33,17 @@ function removeAgent(id) {
 }
 
 function getPlayer() {
-    return agents.get(connection.id)
+    return agents.get(ID)
+}
+
+function hasPlayer() {
+    return agents.has(ID)
+}
+
+let ID = 0
+
+function setId(id) {
+    ID = id
 }
 
 ///////////////////
@@ -42,6 +52,7 @@ function getPlayer() {
 
 // connect to the server
 const connection = barter("ws://127.0.0.1:4242", eventManager(on => [
+    on("connect", setId),
     on("newObject", addObject),
     on("agentJoin", addAgent),
     on("agentLeft", removeAgent),
