@@ -59,14 +59,14 @@ let getAgentsMoves = () => new Promise(done => {
         moves.set( clients.get(client), move)
         
         if (moves.size == sent.size) {
-            done(moves.entries())
+            done([...moves.entries()])
         }
     })
 
     if (clients.size == 0) done([])
 })
 
-let applyEffect = (agent, effect) => {
+let applyEffect = ([agent, effect]) => {
     if (effect.type == "move") {
         agent.target.x = effect.x
         agent.target.y = effect.y
@@ -78,10 +78,10 @@ let tick = async () => {
     let moves = await getAgentsMoves()
     
     // apply the effects
-    for (let [agent, move] of moves) applyEffect(agent, move)
+    moves.forEach(applyEffect)
 
     // move around agents that need to be moved
-    for (let [agent] of moves) {
+    moves.forEach(([agent]) => {
         // its not moving, so were done here
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
@@ -104,8 +104,8 @@ let tick = async () => {
         agent.position.y = agent.target.y
 
         // tell the world news of the agents changes
-        io.emit("update", agent.id, agent)
-    }
+        emit(["update", agent]) 
+    });
 }
 
 let wait = ms => new Promise(done => setTimeout(done, ms))

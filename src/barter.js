@@ -28,23 +28,23 @@ let barter = module.exports = (server, ask) => {
         ask(send, barter.clientJoined, () => {})
 
         client.on("message", event => {
-            let [type, data, id] = event.split("\n")
+            let [type, body, id] = event.split("\n")
 
             // the data should be in form of a json
-            let body = JSON.parse(data)
+            let data = JSON.parse(body)
 
             // were just being told something
-            if (type == ANNOUNCE) ask( body )
+            if (type == ANNOUNCE) ask( data )
 
             // this is a response to a question we asked
-            if (type == RESPONSE) callbacks.get(id)( send, body )
+            if (type == RESPONSE) callbacks.get(id)( send, data )
 
             // were being asked a question
-            if (type == QUESTION) ask(body, response => client.send(`${RESPONSE}\n${JSON.parse(response)}\n${id}`))
+            if (type == QUESTION) ask(data, response => client.send(`${RESPONSE}\n${JSON.parse(response)}\n${id}`))
         })
 
         client.on("close", () => {
-            clients.remove(send)
+            clients.delete(send)
         })
     })
 

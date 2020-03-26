@@ -150,6 +150,5 @@ function goToPoint(source, target) {
 }
 
 function onTurn(callback) {
-    console.log("on turn")
     moves.next(callback)
 }

@@ -24,8 +24,8 @@ function addAgent(agent) {
     agents.set(agent.id, agent)
 }
 
-function updateAgent(id, agent) {
-    agents.set(id, agent)
+function updateAgent(agent) {
+    agents.set(agent.id, agent)
 }
 
 function removeAgent(id) {

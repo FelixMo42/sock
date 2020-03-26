@@ -12,18 +12,18 @@ const barter = (url, ask) => {
     ws.onerror = event => console.log("error", event)
 
     ws.onmessage = event => {
-        let [type, data, id] = event.data.split("\n")
+        let [type, body, id] = event.data.split("\n")
 
-        let body = JSON.parse(data)
+        let data = JSON.parse(body)
 
         // were just being told something
-        if (type == ANNOUNCE) ask(body, () => console.error("can not awnser an announcment."))
+        if (type == ANNOUNCE) ask(data, () => console.error("can not awnser an announcment."))
 
         // are question was awnsered
-        if (type == RESPONSE) callbacks.get(id)(body)
+        if (type == RESPONSE) callbacks.get(id)(data)
 
         // we were asked a question
-        if (type == QUESTION) ask(body, response => ws.send(`${RESPONSE}\n${JSON.stringify(response)}\n${id}`))
+        if (type == QUESTION) ask(data, response => ws.send(`${RESPONSE}\n${JSON.stringify(response)}\n${id}`))
     }
 
     return (question, respond) => {
