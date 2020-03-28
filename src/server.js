@@ -65,7 +65,7 @@ let getAgentsMoves = () => new Promise(done => {
     if (numSent == 0) done(moves)
 })
 
-let applyEffect = (agent, effect) => {
+let applyEffect = (effect, agent) => {
     if (effect.type == "move") {
         agent.target.x = effect.x
         agent.target.y = effect.y
@@ -80,7 +80,9 @@ let tick = async () => {
     moves.forEach(applyEffect)
 
     // move around agents that need to be moved
-    moves.forEach(agent => {
+    moves.forEach((move, agent) => {
+        console.log(agent)
+
         // its not moving, so were done here
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 

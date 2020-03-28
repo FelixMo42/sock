@@ -7,11 +7,7 @@ const question = "Q"
 const emiter = Symbol("barter#emiter")
 
 const makeEventHandler = func => {
-    let map = new Map()
-
-    let events = func((name, callback) => [name, callback])
-
-    for (let [name, callback] of events) map.set(name, callback)
+    let map = new Map( func((name, callback) => [name, callback]) )
 
     // return a function that triger a specified event
     return (event, ...params) => {
@@ -80,7 +76,7 @@ const barter = module.exports = (server, events) => {
             handle(barter.leave, emit)
         
             // tell all callbacks that is closed
-            answer.forEach((id, handle) => handle(barter.leave, emit))
+            answer.forEach(handle => handle(barter.leave, emit))
         })
     })
 
