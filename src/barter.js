@@ -7,24 +7,16 @@ const question = "Q"
 const emiter = Symbol("barter#emiter")
 
 const makeEventHandler = func => {
-    let map = new Map( func((name, callback) => [name, callback]) )
+    // build a map with all the events and callbacks
+    let events = new Map( func((name, callback) => [name, callback]) )
 
     // return a function that triger a specified event
     return (event, ...params) => {
-        // make sure we have the event
-        if (map.has(event)) {
-            // call the event
-            map.get(event)(...params)
-
-            // were all good here, return true
-            return true
-        }
+        // make sure we have the event, and if we do call it
+        if (events.has(event)) events.get(event)(...params)
 
         // just log it, dont throw any errors or any thing
-        console.error(`no handler for event "${event}"`)
-
-        // there was a mistake, return false
-        return false
+        console.error(`no handler for event "${event.toString()}"`)
     }
 }
 
@@ -62,12 +54,13 @@ const barter = module.exports = (server, events) => {
         client.on("message", message => {
             let [type, event, ...params] = message.split("\n")
 
-            if (type == response) {
-                return answer.get(event)(barter.response, emit, ...params.map(parse(emit)))}
+            if (type == response)
+                return answer.get(event)(barter.response, emit, ...params.map(parse(emit)))
             
             if (type == question)
                 return handle(event, ...params.map(parse(emit)))
 
+            // lets no error or any thing, just log it
             console.error(`invalide type ${type}`)
         })
 

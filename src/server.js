@@ -37,6 +37,8 @@ let removeAgent = client => {
     clients.delete(client)
 }
 
+let wait = ms => new Promise(done => setTimeout(done, ms))
+
 let getAgentsMoves = () => new Promise(done => {
     let moves = new Map()
 
@@ -61,8 +63,8 @@ let getAgentsMoves = () => new Promise(done => {
         } )
     ]).length
 
-    // there are no connected clients, were done here
-    if (numSent == 0) done(moves)
+    // the maxiumum amount of time people have to respond
+    wait(1000).then(() => { done(moves) })
 })
 
 let applyEffect = (effect, agent) => {
@@ -81,8 +83,6 @@ let tick = async () => {
 
     // move around agents that need to be moved
     moves.forEach((move, agent) => {
-        console.log(agent)
-
         // its not moving, so were done here
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
@@ -109,13 +109,8 @@ let tick = async () => {
     })
 }
 
-let wait = ms => new Promise(done => setTimeout(done, ms))
-
 let play = async () => {
     while (true) {
-        // lets wait a second befor each turn
-        await wait(1000)
-
         // do the turn
         console.log("start turn")
         await tick()
