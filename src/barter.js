@@ -1,76 +1,101 @@
 const WebSocket = require("ws")
 const uuidv1 = require("uuid").v1
 
-let barter = module.exports = (server, ask) => {
-    const socket = new WebSocket.Server({ server })
+const response = "R"
+const question = "Q"
 
-    const callbacks = new Map()
-    const clients = new Set()
+const emiter = Symbol("barter#emiter")
 
-    const QUESTION = 0
-    const RESPONSE = 1
-    const ANNOUNCE = 2
+const makeEventHandler = func => {
+    let map = new Map()
 
-    socket.on("connection", client => {
-        let send = (question, respond) => {
-            if (respond !== undefined) {
-                let id = uuidv1()
-                callbacks.set(id, respond)
-    
-                client.send(`${QUESTION}\n${JSON.stringify(question)}\n${id}`)
-            } else {
-                client.send(`${ANNOUNCE}\n${JSON.stringify(question)}`)
-            }
+    let events = func((name, callback) => [name, callback])
+
+    for (let [name, callback] of events) map.set(name, callback)
+
+    // return a function that triger a specified event
+    return (event, params) => {
+        // make sure we have the event
+        if (map.has(event)) {
+            // call the event
+            map.get(event)(...params)
+
+            // were all good here, return true
+            return true
         }
 
-        clients.add(send)
+        // just log it, dont throw any errors or any thing
+        console.error(`no handler for event "${event}"`)
 
-        ask(send, barter.clientJoined, () => {})
-
-        client.on("message", event => {
-            let [type, body, id] = event.split("\n")
-
-            // the data should be in form of a json
-            let data = JSON.parse(body)
-
-            // were just being told something
-            if (type == ANNOUNCE) ask( data )
-
-            // this is a response to a question we asked
-            if (type == RESPONSE) callbacks.get(id)( send, data )
-
-            // were being asked a question
-            if (type == QUESTION) ask(data, response => client.send(`${RESPONSE}\n${JSON.parse(response)}\n${id}`))
-        })
-
-        client.on("close", () => {
-            clients.delete(send)
-        })
-    })
-
-    return (question, respond) => {
-        if (respond != undefined) {
-            let id = uuidv1()
-
-            callbacks.set(id, respond)
-
-            socket.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(`${QUESTION}\n${JSON.stringify(question)}\n${id}`)
-                }
-            })
-        } else {
-            socket.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(`${ANNOUNCE}\n${JSON.stringify(question)}`)
-                }
-            })
-        }
-
-        // return a copy of all the sets that we sent the question out to
-        return new Set(clients)
+        // there was a mistake, return false
+        return false
     }
 }
 
-barter.clientJoined = Symbol()
-barter.clientLeft = Symbol()
+const barter = module.exports = (server, events) => {
+    const socket = new WebSocket.Server({server})
+    const handle = makeEventHandler(events)
+    const answer = new Map()
+
+    const stringify = param => {
+        if (typeof param === "function") {
+            let id = "#" + uuidv1()
+
+            answer.set(id, makeEventHandler(param))
+
+            return "\n" + id
+        } else {
+            return "\n" + JSON.stringify(param)
+        }
+    }
+
+    const parse = client => param => {
+        if (param[0] == "#")
+            return (...params) => {
+                client.send(`${response}\n${param}${params.map(stringify)}`)
+            }
+
+        return JSON.parse(param)
+    }
+
+    socket.on("connection", client => {
+        let emit = (event, ...params) => client.send(`${question}\n${event}${params.map(stringify)}`)
+
+        client[emiter] = emit
+
+        handle(barter.join, [ emit ])
+
+        client.on("message", message => {
+            console.log("message: ", message)
+            let [type, event, ...params] = message.split("\n")
+
+            if (type == response) return answer.get(event)(barter.response, params.map(parse(emit)))
+            if (type == question) return handle(event, params.map(parse(emit)))
+
+            console.error(`invalide type ${type}`)
+        })
+
+        client.on("close", () => {
+            // handle it closing
+            handle(barter.leave, [emit])
+        
+            // tell all callbacks that is closed
+            answer.forEach((id, handle) => handle(barter.leave, [emit]))
+        })
+    })
+
+    return (event, ...params) => {
+        let message = `${question}\n${event}${params.map(stringify)}`
+
+        socket.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) client.send(message)
+        })
+
+        // return a copy of the current clients as emiters
+        return Array.from(socket.clients.values(), client => client[emiter])
+    }
+}
+
+barter.join = Symbol("barter#open")
+barter.leave = Symbol("barter#leave")
+barter.response = Symbol("barter#response")

@@ -3,33 +3,18 @@ const http = require("http")
 const barter = require("./barter")
 const uuid = require("uuid").v1
 
-// set up express app
-const app = express()
-app.use("/client", express.static('client'))
-
-const server = http.createServer(app)
-
-const emit = barter(server, (client, question) => {
-    if (question == barter.clientJoined) addAgent(client)
-    if (question == barter.clientLeft) removeAgent(client)
-})
-
 let addAgent = client => {
     // tell the new agent of all the objects in the world
-    for (let object of objects.values()) client(["newObject", object])
+    for (let object of objects.values()) client("newObject", object)
 
     // tell the new agent of all the outher agents on the server
-    for (let outher of agents.values()) client(["agentJoin", outher])
+    for (let outher of agents.values()) client("agentJoin", outher)
 
     // what data do we want to store about the agent?
-    let agent = {
-        position: {x: 0, y: 0},
-        target: {x: 0, y: 0},
-        id: uuid(),
-    }
+    let agent = { position: {x: 0, y: 0}, target: {x: 0, y: 0}, id: uuid() }
 
     // tell the client their id
-    client(["connect", agent.id])
+    client("connect", agent.id)
 
     // add the new agent to the list of agents
     agents.set(agent.id, agent)
@@ -38,12 +23,12 @@ let addAgent = client => {
     clients.set(client, agent)
 
     // tell all the agents that a new agent has connected (including the new agent)
-    emit(["agentJoin", agent])
+    emit("agentJoin", agent)
 }
 
 let removeAgent = client => {
     // tell the gang that the clients agent left
-    emit(["onAgentLeft", clients.get(client).id])
+    emit("onAgentLeft", clients.get(client).id)
 
     // remove the agent from the list of agents
     agents.delete(clients.get(client).id)
@@ -55,18 +40,32 @@ let removeAgent = client => {
 let getAgentsMoves = () => new Promise(done => {
     let moves = new Map()
 
-    let sent = emit(["turn"], (client, move) => {
-        moves.set( clients.get(client), move)
-        
-        if (moves.size == sent.size) {
-            done([...moves.entries()])
-        }
-    })
+    let numSent = emit("turn", on => [
+        on( barter.leave, client => {
+            // delete the move from the set
+            moves.delete(client)
 
-    if (clients.size == 0) done([])
+            // welp, one less response we need to wait for
+            numSent -= 1
+
+            // there are no more connected agents, so were done
+            if (numSent == 0) done(moves)
+        } ),
+
+        on( barter.response, (client, move) => {
+            // bind the move to the client
+            moves.set( clients.get(client), move )
+            
+            // everyone has responded, were done here
+            if (moves.size == numSent) done(moves)
+        } )
+    ]).length
+
+    // there are no connected clients, were done here
+    if (numSent == 0) done(moves)
 })
 
-let applyEffect = ([agent, effect]) => {
+let applyEffect = (agent, effect) => {
     if (effect.type == "move") {
         agent.target.x = effect.x
         agent.target.y = effect.y
@@ -81,7 +80,7 @@ let tick = async () => {
     moves.forEach(applyEffect)
 
     // move around agents that need to be moved
-    moves.forEach(([agent]) => {
+    moves.forEach(agent => {
         // its not moving, so were done here
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
@@ -104,15 +103,18 @@ let tick = async () => {
         agent.position.y = agent.target.y
 
         // tell the world news of the agents changes
-        emit(["update", agent]) 
-    });
+        emit("update", agent)
+    })
 }
 
 let wait = ms => new Promise(done => setTimeout(done, ms))
 
 let play = async () => {
     while (true) {
+        // lets wait a second befor each turn
         await wait(1000)
+
+        // do the turn
         console.log("start turn")
         await tick()
         console.log("end turn")
@@ -126,6 +128,19 @@ const objects = new Map()
 
 // add an object for testing perpuses
 objects.set(0, { id: 0, x: 5, y: 0, width: 1, height: 10 })
+
+// set up express app
+const app = express()
+app.use("/client", express.static('client'))
+
+// create the http server
+const server = http.createServer(app)
+
+// create the websocket server
+const emit = barter(server, on => [
+    on(barter.join, addAgent),
+    on(barter.leave, removeAgent)
+])
 
 // listen in on our fav port
 server.listen(4242)

@@ -51,11 +51,11 @@ function setId(id) {
 ///////////////////
 
 // connect to the server
-const connection = barter("ws://127.0.0.1:4242", eventManager(on => [
+const connection = barter("ws://127.0.0.1:4242", on => [
     on("connect", setId),
     on("newObject", addObject),
     on("agentJoin", addAgent),
     on("agentLeft", removeAgent),
     on("update", updateAgent),
     on("turn", callback => onTurn(callback))
-]))
+])

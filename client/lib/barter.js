@@ -1,45 +1,74 @@
-const barter = (url, ask) => {
-    const ws = new WebSocket(url)
+const response = "R"
+const question = "Q"
 
-    const callbacks = new Map()
+const makeEventHandler = func => {
+    let map = new Map()
 
-    const QUESTION = 0
-    const RESPONSE = 1
-    const ANNOUNCE = 2
+    let events = func((name, callback) => [name, callback])
 
-    ws.onopen = event => console.log("open", event)
-    ws.onclose = event => console.log("close", event)
-    ws.onerror = event => console.log("error", event)
+    for (let [name, callback] of events) map.set(name, callback)
 
-    ws.onmessage = event => {
-        let [type, body, id] = event.data.split("\n")
+    // return a function that triger a specified event
+    return (event, params) => {
+        // make sure we have the event
+        if (map.has(event)) {
+            // call the event
+            map.get(event)(...params)
 
-        let data = JSON.parse(body)
+            // were all good here, return true
+            return true
+        }
 
-        // were just being told something
-        if (type == ANNOUNCE) ask(data, () => console.error("can not awnser an announcment."))
+        // just log it
+        console.error(`no handler for event "${event}"`)
 
-        // are question was awnsered
-        if (type == RESPONSE) callbacks.get(id)(data)
-
-        // we were asked a question
-        if (type == QUESTION) ask(data, response => ws.send(`${RESPONSE}\n${JSON.stringify(response)}\n${id}`))
+        // there was a mistake, return false
+        return false
     }
+}
 
-    return (question, respond) => {
-        if (respond !== undefined) {
-            let id = uuidv1()
-            callbacks.set(id, respond)
+const barter = (url, events) => {
+    const socket = new WebSocket(url)
+    const handle = makeEventHandler(events)
+    const answer = new Map()
 
-            ws.send(`${QUESTION}\n${question}\n${id}`)
+    const stringify = param => {
+        if (typeof param === "function") {
+            let id = "#" + uuidv1()
+
+            answer.set(id, makeEventHandler(param))
+
+            return "\n" + id
         } else {
-            ws.send(`${ANNOUNCE}\n${question}`)
+            return "\n" + JSON.stringify(param)
         }
     }
+
+    const parse = param => {
+        if (param[0] == "#")
+            return (...params) => socket.send(`${response}\n${param}${params.map(stringify)}`)
+
+        return JSON.parse(param)
+    }
+
+    socket.onopen = event => console.log("open", event)
+    socket.onclose = event => console.log("close", event)
+    socket.onerror = event => console.log("error", event)
+
+    socket.onmessage = message => {
+        console.log(message)
+
+        let [type, event, ...params] = message.data.split("\n")
+
+        if (type == response) return answer.get(event)(barter.response, params.map(parse))
+        if (type == question) return handle(event, params.map(parse))
+
+        console.error(`invalide type ${type}`)
+    }
+
+    return (event, ...params) => client.send(`${question}\n${event}${params.map(stringify)}`)
 }
 
-const eventManager = callbacks => {
-    let events = Object.fromEntries(callbacks((key, callback) => [key, callback]))
-
-    return ([event, ...data], callback) => events[event](...data, callback)
-}
+barter.join = Symbol("barter#open")
+barter.leave = Symbol("barter#close")
+barter.response = Symbol("barter#response")
