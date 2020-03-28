@@ -51,13 +51,11 @@ const barter = (url, events) => {
         return JSON.parse(param)
     }
 
-    socket.onopen = event => console.log("open", event)
-    socket.onclose = event => console.log("close", event)
-    socket.onerror = event => console.log("error", event)
+    socket.onopen = event => console.info("open", event)
+    socket.onclose = event => console.info("close", event)
+    socket.onerror = event => console.info("error", event)
 
     socket.onmessage = message => {
-        console.log(message)
-
         let [type, event, ...params] = message.data.split("\n")
 
         if (type == response) return answer.get(event)(barter.response, params.map(parse))

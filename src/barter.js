@@ -14,7 +14,7 @@ const makeEventHandler = func => {
     for (let [name, callback] of events) map.set(name, callback)
 
     // return a function that triger a specified event
-    return (event, params) => {
+    return (event, ...params) => {
         // make sure we have the event
         if (map.has(event)) {
             // call the event
@@ -51,9 +51,7 @@ const barter = module.exports = (server, events) => {
 
     const parse = client => param => {
         if (param[0] == "#")
-            return (...params) => {
-                client.send(`${response}\n${param}${params.map(stringify)}`)
-            }
+            return (...params) => client.send(`${response}\n${param}${params.map(stringify)}`)
 
         return JSON.parse(param)
     }
@@ -63,24 +61,26 @@ const barter = module.exports = (server, events) => {
 
         client[emiter] = emit
 
-        handle(barter.join, [ emit ])
+        handle(barter.join, emit)
 
         client.on("message", message => {
-            console.log("message: ", message)
             let [type, event, ...params] = message.split("\n")
 
-            if (type == response) return answer.get(event)(barter.response, params.map(parse(emit)))
-            if (type == question) return handle(event, params.map(parse(emit)))
+            if (type == response) {
+                return answer.get(event)(barter.response, emit, ...params.map(parse(emit)))}
+            
+            if (type == question)
+                return handle(event, ...params.map(parse(emit)))
 
             console.error(`invalide type ${type}`)
         })
 
         client.on("close", () => {
             // handle it closing
-            handle(barter.leave, [emit])
+            handle(barter.leave, emit)
         
             // tell all callbacks that is closed
-            answer.forEach((id, handle) => handle(barter.leave, [emit]))
+            answer.forEach((id, handle) => handle(barter.leave, emit))
         })
     })
 
