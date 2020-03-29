@@ -39,6 +39,9 @@ let removeAgent = client => {
 
 let wait = ms => new Promise(done => setTimeout(done, ms))
 
+const minTime = 500
+const maxTime = 5000
+
 let getAgentsMoves = () => new Promise(done => {
     let moves = new Map()
 
@@ -64,7 +67,7 @@ let getAgentsMoves = () => new Promise(done => {
     ]).length
 
     // the maxiumum amount of time people have to respond
-    wait(1000).then(() => { done(moves) })
+    wait(maxTime).then(() => { done(moves) })
 })
 
 let applyEffect = (effect, agent) => {
@@ -76,7 +79,9 @@ let applyEffect = (effect, agent) => {
 
 let tick = async () => {
     // ask the agents what they want to do
+    let deplay = wait(minTime)
     let moves = await getAgentsMoves()
+    await deplay
     
     // apply the effects
     moves.forEach(applyEffect)

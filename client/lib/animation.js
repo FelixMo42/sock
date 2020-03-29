@@ -18,8 +18,6 @@ const animate = () => animations.forEach(animation => {
     }
 })
 
-// Math.min
-
 const goto = (id, target, time) => {
     let sprite = sprites.get(id)
 

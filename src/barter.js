@@ -51,6 +51,8 @@ const barter = module.exports = (server, events) => {
 
         handle(barter.join, emit)
 
+        client.isAlive = true
+
         client.on("message", message => {
             let [type, event, ...params] = message.split("\n")
 
@@ -70,6 +72,21 @@ const barter = module.exports = (server, events) => {
         
             // tell all callbacks that is closed
             answer.forEach(handle => handle(barter.leave, emit))
+        })
+
+        client.on("pong", () => {
+            isAlive = true
+        })
+    })
+
+    setInterval(() => {
+        socket.clients.forEach(client => {
+            if (client.readyState == WebSocket.OPEN) {
+                if (client.isAlive == false) return client.terminate()
+
+                client.isAlive = true
+                client.ping(() => {})
+            }
         })
     })
 

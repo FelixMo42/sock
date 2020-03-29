@@ -76,14 +76,11 @@ eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw:
     ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
 })) )
 
-
-///
-
 eventmonger.on(newAgentEvent, agent => addSprite(agent.id, ({ ...agent.position, draw:
     ({x, y}) => ellipse(x * meter + center, y * meter + center, 30, 30)
 })) )
 
-eventmonger.on(updateAgentEvent, agent => goto(agent.id, agent.position, 1000))
+eventmonger.on(updateAgentEvent, agent => goto(agent.id, agent.position, 500))
 
 eventmonger.on(removeAgentEvent, agent => removeSprite(agent.id))
 
