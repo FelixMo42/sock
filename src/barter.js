@@ -13,7 +13,7 @@ const makeEventHandler = func => {
     // return a function that triger a specified event
     return (event, ...params) => {
         // make sure we have the event, and if we do call it
-        if (events.has(event)) events.get(event)(...params)
+        if (events.has(event)) return events.get(event)(...params)
 
         // just log it, dont throw any errors or any thing
         console.error(`no handler for event "${event.toString()}"`)
@@ -77,7 +77,7 @@ const barter = module.exports = (server, events) => {
         let message = `${question}\n${event}${params.map(stringify)}`
 
         socket.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) client.send(message)
+            if (client.readyState == WebSocket.OPEN) client.send(message)
         })
 
         // return a copy of the current clients as emiters

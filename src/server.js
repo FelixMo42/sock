@@ -110,12 +110,7 @@ let tick = async () => {
 }
 
 let play = async () => {
-    while (true) {
-        // do the turn
-        console.log("start turn")
-        await tick()
-        console.log("end turn")
-    }
+    while (true) await tick()
 }
 
 // maps to keep track of all the users and outher stuff

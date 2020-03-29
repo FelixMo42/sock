@@ -74,6 +74,10 @@ function getCameraPosition() {
     }
 }
 
+eventmonger.on(newObjectEvent, object => addSprite(({ ...object, draw:
+    ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
+})) )
+
 function draw() {
     // move around the canvas
     translate( ...getCameraPosition() )
@@ -84,7 +88,6 @@ function draw() {
     // draw all the agents and objects
     stroke("black")
     agents.forEach(({position: {x, y}}) => ellipse(x * meter + center, y * meter + center, 30, 30))
-    objects.forEach(({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter))
 
     // draw you target locations
     noFill()
@@ -93,14 +96,15 @@ function draw() {
 
     // hightlight the tile with the mouse over it
     rect(mouseTileX() * meter + 5, mouseTileY() * meter + 5, meter - 10, meter - 10, 10)
+
+    // draw all the sprites
+    drawSprites()
 }
 
 function *range(min, max) {
     let sign = Math.sign(max)
 
-    for (let i = min; i < Math.abs(max); i++) {
-        yield sign * i
-    }
+    for (let i = min; i < Math.abs(max); i++) yield sign * i
 }
 
 function mouseTileX() {

@@ -12,24 +12,42 @@ function reset() {
 // OBJECT API //
 ////////////////
 
-function addObject(object) {
+const newObjectEvent = eventmonger.newEvent()
+
+function newObject(object) {
     objects.set(object.id, object)
+
+    eventmonger.fire(newObjectEvent, object)
 }
 
 ///////////////
 // AGENT API //
 ///////////////
 
-function addAgent(agent) {
+const newAgentEvent = eventmonger.newEvent()
+
+function newAgent(agent) {
     agents.set(agent.id, agent)
+
+    eventmonger.fire(newAgentEvent, agent)
 }
+
+const updateAgentEvent = eventmonger.newEvent()
 
 function updateAgent(agent) {
     agents.set(agent.id, agent)
+
+    eventmonger.fire(updateAgentEvent, agent)
 }
 
+const removeAgentEvent = eventmonger.newEvent()
+
 function removeAgent(id) {
+    let agent = agents.get(id)
+
     agents.delete(id)
+
+    eventmonger.fire(updateAgentEvent, agent)
 }
 
 function getPlayer() {
@@ -53,8 +71,8 @@ function setId(id) {
 // connect to the server
 const connection = barter("ws://127.0.0.1:4242", on => [
     on("connect", setId),
-    on("newObject", addObject),
-    on("agentJoin", addAgent),
+    on("newObject", newObject),
+    on("agentJoin", newAgent),
     on("agentLeft", removeAgent),
     on("update", updateAgent),
     on("turn", callback => onTurn(callback))

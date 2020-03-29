@@ -2,28 +2,15 @@ const response = "R"
 const question = "Q"
 
 const makeEventHandler = func => {
-    let map = new Map()
-
-    let events = func((name, callback) => [name, callback])
-
-    for (let [name, callback] of events) map.set(name, callback)
+    let map = new Map(func((name, callback) => [name, callback]))
 
     // return a function that triger a specified event
     return (event, params) => {
         // make sure we have the event
-        if (map.has(event)) {
-            // call the event
-            map.get(event)(...params)
-
-            // were all good here, return true
-            return true
-        }
+        if (map.has(event)) return map.get(event)(...params)
 
         // just log it
         console.error(`no handler for event "${event}"`)
-
-        // there was a mistake, return false
-        return false
     }
 }
 
@@ -33,7 +20,7 @@ const barter = (url, events) => {
     const answer = new Map()
 
     const stringify = param => {
-        if (typeof param === "function") {
+        if (typeof param == "function") {
             let id = "#" + uuidv1()
 
             answer.set(id, makeEventHandler(param))
