@@ -1,4 +1,4 @@
-class Stream {
+class EventQueue {
     list = []
 
     clear() {
@@ -44,16 +44,14 @@ class Stream {
     }
 }
 
-const moves = new Stream()
+const moves = new EventQueue()
 
 const meter = 60
 const center = meter / 2
 
 const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
 
-function div(a, b) {
-    return (a - a % b) / b
-}
+const div = (a, b) => (a - a % b) / b
 
 function setup() {
     createCanvas(windowWidth, windowHeight)
@@ -66,17 +64,28 @@ function windowResized() {
 function getCameraPosition() {
     if ( hasPlayer() ) {
         return [
-            -getPlayer().position.x * meter + width / 2,
-            -getPlayer().position.y * meter + height / 2
+            -sprites.get(getPlayer().id).x * meter + width / 2,
+            -sprites.get(getPlayer().id).y * meter + height / 2
         ]
     } else {
         return [ 0, 0 ]
     }
 }
 
-eventmonger.on(newObjectEvent, object => addSprite(({ ...object, draw:
+eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw:
     ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
 })) )
+
+
+///
+
+eventmonger.on(newAgentEvent, agent => addSprite(agent.id, ({ ...agent.position, draw:
+    ({x, y}) => ellipse(x * meter + center, y * meter + center, 30, 30)
+})) )
+
+eventmonger.on(updateAgentEvent, agent => goto(agent.id, agent.position, 1000))
+
+eventmonger.on(removeAgentEvent, agent => removeSprite(agent.id))
 
 function draw() {
     // move around the canvas
@@ -85,10 +94,6 @@ function draw() {
     // clear the screen
     clear()
 
-    // draw all the agents and objects
-    stroke("black")
-    agents.forEach(({position: {x, y}}) => ellipse(x * meter + center, y * meter + center, 30, 30))
-
     // draw you target locations
     noFill()
     stroke("blue")
@@ -96,6 +101,9 @@ function draw() {
 
     // hightlight the tile with the mouse over it
     rect(mouseTileX() * meter + 5, mouseTileY() * meter + 5, meter - 10, meter - 10, 10)
+
+    // tick all the animations
+    animate()
 
     // draw all the sprites
     drawSprites()

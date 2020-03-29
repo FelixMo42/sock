@@ -1,25 +1,16 @@
-const date = new Date()
+const getTime = () => (new Date()).getTime()
 
-const sprites = new Set()
+const sprites = new Map()
 
-const addSprite = sprite => {
-    sprites.add(sprite)
-    return sprite
-}
+const addSprite = (id, sprite) => sprites.set(id, sprite)
 
-const deleteSprite = sprite => {
-    sprites.delete(sprite)
-    return sprite
-}
+const removeSprite = id => sprites.delete(id)
 
 const drawSprites = () => sprites.forEach(sprite => sprite.draw(sprite))
 
 const animations = new Set()
 
-const addAnimation = animation => {
-    animations.add(animation)
-    return animation
-}
+const addAnimation = animation => animations.add(animation)
 
 const animate = () => animations.forEach(animation => {
     if ( animation() ) {
@@ -27,8 +18,12 @@ const animate = () => animations.forEach(animation => {
     }
 })
 
-const goto = (sprite, target, time) => {
-    let start = date.getTime()
+// Math.min
+
+const goto = (id, target, time) => {
+    let sprite = sprites.get(id)
+
+    let start = getTime()
 
     let position = {
         x: sprite.x,
@@ -40,10 +35,12 @@ const goto = (sprite, target, time) => {
         y: target.y - sprite.y,
     }
 
-    return () => {
-        let percent = Math.max(date.getTime() - start, time) / time
+    addAnimation(() => {
+        let percent = Math.min(getTime() - start, time) / time
 
         sprite.x = position.x + offset.x * percent
         sprite.y = position.y + offset.y * percent
-    }
+
+        if (percent == 1) return true
+    })
 }
