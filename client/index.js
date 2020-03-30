@@ -93,7 +93,6 @@ function draw() {
 
     // draw you target locations
     noFill()
-    stroke("blue")
     moves.forEach(({x, y}) => ellipse(x * meter + center, y * meter + center, 20, 20))
 
     // hightlight the tile with the mouse over it

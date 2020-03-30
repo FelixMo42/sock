@@ -40,7 +40,7 @@ let removeAgent = client => {
 let wait = ms => new Promise(done => setTimeout(done, ms))
 
 const minTime = 500
-const maxTime = 5000
+const maxTime = 1000
 
 let getAgentsMoves = () => new Promise(done => {
     let moves = new Map()
@@ -86,18 +86,10 @@ let tick = async () => {
     // apply the effects
     moves.forEach(applyEffect)
 
-    // move around agents that need to be moved
+    // figure out if the requested movement is allowed
     moves.forEach((move, agent) => {
-        // its not moving, so were done here
+        // if were not moving, then were done here 
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
-
-        // make sure the new position dosent overlap with anything
-        for (let object of objects.values()) {
-            if (
-                agent.target.x >= object.x && agent.target.x < object.x + object.width &&
-                agent.target.y >= object.y && agent.target.y < object.y + object.height
-            ) return
-        }
 
         // make sure the agent is only moving to an adjacent square
         if (
@@ -105,10 +97,37 @@ let tick = async () => {
             Math.abs( agent.position.y - agent.target.y ) > 1
         ) return
 
+        // make sure the new position dosent overlap with any objects
+        for (let object of objects.values()) {
+            if (
+                agent.target.x >= object.x && agent.target.x < object.x + object.width &&
+                agent.target.y >= object.y && agent.target.y < object.y + object.height
+            ) return
+        }
+
+        // make sure it dosent overlap with any outher players
+        for (let outher of agents.values()) {
+            // were all the same person, skip
+            if (outher == agent) continue
+
+            // were both going to the same place, not cool
+            if (agent.target.x == outher.target.x && agent.target.y == outher.target.y) return
+
+            // were going to were the outher guy left from, also not cool, for now
+            if (agent.target.x == outher.position.x && agent.target.y == outher.position.y) return
+        }
+
         // update the agents positions
         agent.position.x = agent.target.x
         agent.position.y = agent.target.y
+    })
 
+    moves.forEach((move, agent) => {
+        agent.target.x = agent.position.x
+        agent.target.y = agent.position.y
+    })
+
+    moves.forEach((move, agent) => {
         // tell the world news of the agents changes
         emit("update", agent)
     })
