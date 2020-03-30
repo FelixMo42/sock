@@ -1,79 +1,76 @@
-// keep track of object we know about
-
+// keep track of object and agents we know about
 const agents = new Map()
 const objects = new Map()
 
-function reset() {
-    agents.clear()
-    objects.clear()
-}
-
-////////////////
-// OBJECT API //
-////////////////
-
+// object events
 const newObjectEvent = eventmonger.newEvent()
 
-function newObject(object) {
-    objects.set(object.id, object)
-
-    eventmonger.fire(newObjectEvent, object)
-}
-
-///////////////
-// AGENT API //
-///////////////
-
+// agent events
 const newAgentEvent = eventmonger.newEvent()
-
-function newAgent(agent) {
-    agents.set(agent.id, agent)
-
-    eventmonger.fire(newAgentEvent, agent)
-}
-
 const updateAgentEvent = eventmonger.newEvent()
-
-function updateAgent(agent) {
-    agents.set(agent.id, agent)
-
-    eventmonger.fire(updateAgentEvent, agent)
-}
-
 const removeAgentEvent = eventmonger.newEvent()
 
-function removeAgent(id) {
-    let agent = agents.get(id)
+// the controlled agent id
+let ID = 0
 
-    agents.delete(id)
-
-    eventmonger.fire(updateAgentEvent, agent)
-}
-
-function getPlayer() {
-    return agents.get(ID)
-}
-
+// check if our player exist
 function hasPlayer() {
     return agents.has(ID)
 }
 
-let ID = 0
-
-function setId(id) {
-    ID = id
+// get the player their controlling
+function getPlayer() {
+    return agents.get(ID)
 }
 
-///////////////////
-// SOCKET.IO API //
-///////////////////
+// setup the callbacks in their own seperate blocks
+{
+    // object callbacks
 
-// connect to the server
-const connection = barter("ws://127.0.0.1:4242", on => [
-    on("connect", setId),
-    on("newObject", newObject),
-    on("agentJoin", newAgent),
-    on("agentLeft", removeAgent),
-    on("update", updateAgent),
-    on("turn", callback => onTurn(callback))
-])
+    function newObject(object) {
+        objects.set(object.id, object)
+    
+        eventmonger.fire(newObjectEvent, object)
+    }
+
+    // agent callbacks
+
+    function newAgent(agent) {
+        agents.set(agent.id, agent)
+
+        eventmonger.fire(newAgentEvent, agent)
+    }
+
+    function updateAgent(agent) {
+        agents.set(agent.id, agent)
+
+        eventmonger.fire(updateAgentEvent, agent)
+    }
+
+    function removeAgent(id) {
+        eventmonger.fire(removeAgentEvent, agents.get(id))
+
+        agents.delete(id)
+    }
+
+    // initilization callbacks
+
+    function setId(id) {
+        ID = id
+    }
+
+    function reset() {
+        agents.clear()
+        objects.clear()
+    }
+
+    // connect to the server and register callbacks
+    barter("ws://127.0.0.1:4242", on => [
+        on("connect", setId),
+        on("newObject", newObject),
+        on("agentJoin", newAgent),
+        on("agentLeft", removeAgent),
+        on("update", updateAgent),
+        on("turn", callback => onTurn(callback))
+    ])
+}

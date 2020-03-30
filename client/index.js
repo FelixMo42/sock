@@ -120,16 +120,39 @@ function mouseTileY() {
 }
 
 function mouseReleased() {
-    goToPoint(getPlayer().position, {x: mouseTileX(), y: mouseTileY()})
+    // clear the previus path
+    moves.clear()
+
+    // is the shift key down?
+    if ( keyIsDown(16) ) {
+        // attack a target
+        attack({ x: mouseTileX(), y: mouseTileY() })
+    } else {
+        // tell the agent to where were pressing
+        goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
+    }
+}
+
+function getAgentAtPosition(position) {
+    for (let agent of agents.values()) {
+        if (agent.position.x == position.x && agent.position.y == position.y) return agent
+    }
+}
+
+function attack(target) {
+    let agent = getAgentAtPosition(target)
+
+    moves.add({
+        type: "damage",
+        value: 100,
+        target: agent.id
+    })
 }
 
 function goToPoint(source, target) {
     // how far do we want to go?
     let deltaX = target.x - source.x
     let deltaY = target.y - source.y
-
-    // clear the previus path
-    moves.clear()
 
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
         let slope = deltaY / deltaX
