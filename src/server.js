@@ -3,34 +3,58 @@ const http = require("http")
 const barter = require("./barter")
 const uuid = require("uuid").v1
 
-let random = max => Math.floor(Math.random() * max)
+let random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
-let addAgent = client => {
-    // tell the new agent of all the objects in the world
-    for (let object of objects.values()) client("newObject", object)
+let isEmptyPosition = position => {
+    for (let object of objects.values()) {
+        if ( objectIncludes(object, position) ) {
+            return false
+        }
+    }
 
-    // tell the new agent of all the outher agents on the server
-    for (let outher of agents.values()) client("agentJoin", outher)
+    for (let agent of agents.values()) {
+        if ( agent.position.x == position.x && agent.position.y == position.y ) {
+            return false
+        }
+    }
 
-    // what data do we want to store about the agent?
+    return true
+}
+
+let objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
+
+let spawnAgent = () => {
+    //  get a postion in the spawn box
+    let position = { x: random(-5, 5), y: random(-5, 5) }
+
+    // make sure the postion is clear, if not regenerate it
+    while ( !isEmptyPosition(position) )
+        position = { x: random(-5, 5), y: random(-5, 5) }
+
+    // make the agent
     let agent = {
         id: uuid(),
         hp: 100, mp: 100,
-        position: { x: 0, y: 0 },
-        target: { x: 0, y: 0 }
+        position: { ...position },
+        target: { ...position }
     }
-
-    // tell the client their id
-    client("connect", agent.id)
 
     // add the new agent to the list of agents
     agents.set(agent.id, agent)
 
-    // add the socket to are list of sockets
-    clients.set(client, agent)
-
-    // tell all the agents that a new agent has connected (including the new agent)
+    // tell all the cients that a new agent has connected (including the new agent)
     emit("agentJoin", agent)
+
+    // return it
+    return agent
+}
+
+let addClient = client => {
+    // tell the new client of all the objects in the world
+    for (let object of objects.values()) client("newObject", object)
+
+    // tell the new client of all the agents in the server
+    for (let outher of agents.values()) client("agentJoin", outher)
 }
 
 let removeAgent = agent => {
@@ -42,11 +66,13 @@ let removeAgent = agent => {
 }
 
 let removeClient = client => {
-    // remove the agent that the client is controlling
-    removeAgent( clients.get(client) )
+    if ( clients.has(client) ) {
+        // remove the agent that the client is controlling
+        removeAgent( clients.get(client) )
 
-    // remove the client from are list of active clients
-    clients.delete(client)
+        // remove the client from are list of active clients
+        clients.delete(client)
+    }
 }
 
 let wait = ms => new Promise(done => setTimeout(done, ms))
@@ -109,7 +135,7 @@ let tick = async () => {
     })
 
     // figure out if the requested movement is allowed
-    moves.forEach((move, agent) => {
+    agents.forEach(agent => {
         // if were not moving, then were done here 
         if (agent.position.x == agent.target.x && agent.position.y == agent.target.y) return
 
@@ -120,12 +146,7 @@ let tick = async () => {
         ) return
 
         // make sure the new position dosent overlap with any objects
-        for (let object of objects.values()) {
-            if (
-                agent.target.x >= object.x && agent.target.x < object.x + object.width &&
-                agent.target.y >= object.y && agent.target.y < object.y + object.height
-            ) return
-        }
+        for (let object of objects.values()) if ( objectIncludes(object, agent.target) ) return
 
         // make sure it dosent overlap with any outher players
         for (let outher of agents.values()) {
@@ -145,13 +166,13 @@ let tick = async () => {
     })
 
     // reset the target position
-    moves.forEach((move, agent) => {
+    agents.forEach(agent => {
         agent.target.x = agent.position.x
         agent.target.y = agent.position.y
     })
 
     // tell the world news of the agents changes
-    moves.forEach((move, agent) => emit("update", agent))
+    agents.forEach(agent => emit("update", agent))
 }
 
 let play = async () => {
@@ -175,8 +196,24 @@ const server = http.createServer(app)
 
 // create the websocket server
 const emit = barter(server, on => [
-    on(barter.join, addAgent),
-    on(barter.leave, removeClient)
+    // deal with users leaving and joining
+    on(barter.join, addClient),
+    on(barter.leave, removeClient),
+    
+    // a users asked us to spawn an agent for them
+    on("spawn", (client, reportId) => {
+        // if the client all ready has a agent then remove that one first
+        if ( clients.has(client) ) removeClient(client)
+        
+        // spawn us a new agent
+        let agent = spawnAgent()
+
+        // bind the agent to the client
+        clients.set(client, agent)
+
+        // tell the client their id
+        reportId(agent.id)
+    })
 ])
 
 // listen in on our fav port

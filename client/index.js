@@ -51,7 +51,7 @@ const center = meter / 2
 
 const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
 
-const div = (a, b) => (a - a % b) / b
+const div = (a, b) => Math.floor(a / b)
 
 function setup() {
     createCanvas(windowWidth, windowHeight)
@@ -59,6 +59,12 @@ function setup() {
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight)
+}
+
+function keyPressed() {
+    if ( keyCode == 32 ) {
+        spawnPlayer() 
+    }
 }
 
 function getCameraPosition() {
@@ -120,6 +126,9 @@ function mouseTileY() {
 }
 
 function mouseReleased() {
+    // we dont have a player, we can do anything
+    if ( !hasPlayer() ) return
+
     // clear the previus path
     moves.clear()
 
@@ -140,13 +149,21 @@ function getAgentAtPosition(position) {
 }
 
 function attack(target) {
+    // get the agent at the target position
     let agent = getAgentAtPosition(target)
 
+    // theres no agent here, its a lie
+    if (!agent) return false
+
+    // add this attack to our list of moves
     moves.add({
         type: "damage",
         value: 100,
         target: agent.id
     })
+
+    // return news of are succses
+    return true
 }
 
 function goToPoint(source, target) {

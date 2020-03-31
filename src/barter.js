@@ -57,10 +57,10 @@ const barter = module.exports = (server, events) => {
             let [type, event, ...params] = message.split("\n")
 
             if (type == response)
-                return answer.get(event)(barter.response, emit, ...params.map(parse(emit)))
-            
+                return answer.get(event)(barter.response, emit, ...params.map(parse(client)))
+
             if (type == question)
-                return handle(event, ...params.map(parse(emit)))
+                return handle(event, emit, ...params.map(parse(client)))
 
             // lets no error or any thing, just log it
             console.error(`invalide type ${type}`)

@@ -10,7 +10,7 @@ const makeEventHandler = func => {
         if (map.has(event)) return map.get(event)(...params)
 
         // just log it
-        console.error(`no handler for event "${event}"`)
+        console.error(`no handler for event `, event)
     }
 }
 
@@ -51,7 +51,7 @@ const barter = (url, events) => {
         console.error(`invalide type ${type}`)
     }
 
-    return (event, ...params) => client.send(`${question}\n${event}${params.map(stringify)}`)
+    return (event, ...params) => socket.send(`${question}\n${event}${params.map(stringify)}`)
 }
 
 barter.join = Symbol("barter#open")
