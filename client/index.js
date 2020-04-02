@@ -82,13 +82,13 @@ eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw:
     ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
 })) )
 
-eventmonger.on(newAgentEvent, agent => addSprite(agent.id, ({ ...agent.position, draw:
+eventmonger.on(newPlayerEvent, player => addSprite(player.id, ({ ...player.position, draw:
     ({x, y}) => ellipse(x * meter + center, y * meter + center, 30, 30)
 })) )
 
-eventmonger.on(updateAgentEvent, agent => goto(agent.id, agent.position, 500))
+eventmonger.on(updatePlayerEvent, player => goto(player.id, player.position, 500))
 
-eventmonger.on(removeAgentEvent, agent => removeSprite(agent.id))
+eventmonger.on(removePlayerEvent, player => removeSprite(player.id))
 
 function draw() {
     // move around the canvas
@@ -137,29 +137,29 @@ function mouseReleased() {
         // attack a target
         attack({ x: mouseTileX(), y: mouseTileY() })
     } else {
-        // tell the agent to where were pressing
+        // tell the player to where were pressing
         goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
     }
 }
 
-function getAgentAtPosition(position) {
-    for (let agent of agents.values()) {
-        if (agent.position.x == position.x && agent.position.y == position.y) return agent
+function getPlayerAtPosition(position) {
+    for (let player of players.values()) {
+        if (player.position.x == position.x && player.position.y == position.y) return player
     }
 }
 
 function attack(target) {
-    // get the agent at the target position
-    let agent = getAgentAtPosition(target)
+    // get the player at the target position
+    let player = getPlayerAtPosition(target)
 
-    // theres no agent here, its a lie
-    if (!agent) return false
+    // theres no player here, its a lie
+    if (!player) return false
 
     // add this attack to our list of moves
     moves.add({
-        type: "damage",
+        type: 0,
         value: 100,
-        target: agent.id
+        target: player.id
     })
 
     // return news of are succses

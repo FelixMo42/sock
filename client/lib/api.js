@@ -1,24 +1,24 @@
-// keep track of object and agents we know about
-const agents = new Map()
+// keep track of object and players we know about
+const players = new Map()
 const objects = new Map()
 
 // object events
 const newObjectEvent = eventmonger.newEvent()
 
-// agent events
-const newAgentEvent = eventmonger.newEvent()
-const updateAgentEvent = eventmonger.newEvent()
-const removeAgentEvent = eventmonger.newEvent()
+// player events
+const newPlayerEvent = eventmonger.newEvent()
+const updatePlayerEvent = eventmonger.newEvent()
+const removePlayerEvent = eventmonger.newEvent()
 
-// the controlled agent id, -1 means no agent
+// the controlled player id, -1 means no player
 let ID = -1
 
 // spawn a new player
 function spawnPlayer() {
-    // -1 means no agent, so do that
+    // -1 means no player, so do that
     ID = -1
 
-    // ask the server to spawn us an agent
+    // ask the server to spawn us an player
     emit("spawn", on => [
         on(barter.response, id => {
             ID = id
@@ -28,12 +28,12 @@ function spawnPlayer() {
 
 // check if our player exist
 function hasPlayer() {
-    return agents.has(ID)
+    return players.has(ID)
 }
 
 // get the player their controlling
 function getPlayer() {
-    return agents.get(ID)
+    return players.get(ID)
 }
 
 // setup the callbacks in their own seperate blocks and then get the connection
@@ -46,36 +46,36 @@ const emit = (() => {
         eventmonger.fire(newObjectEvent, object)
     }
 
-    // agent callbacks
+    // player callbacks
 
-    function newAgent(agent) {
-        agents.set(agent.id, agent)
+    function newPlayer(player) {
+        players.set(player.id, player)
 
-        eventmonger.fire(newAgentEvent, agent)
+        eventmonger.fire(newPlayerEvent, player)
     }
 
-    function updateAgent(agent) {
-        agents.set(agent.id, agent)
+    function updatePlayer(player) {
+        players.set(player.id, player)
 
-        eventmonger.fire(updateAgentEvent, agent)
+        eventmonger.fire(updatePlayerEvent, player)
     }
 
-    function removeAgent(id) {
+    function removePlayer(id) {
         if (id == ID) {
             // we were removed!
         }
 
-        eventmonger.fire(removeAgentEvent, agents.get(id))
+        eventmonger.fire(removePlayerEvent, players.get(id))
 
-        agents.delete(id)
+        players.delete(id)
     }
 
     // connect to the server and register the callbacks and return the connection
     return barter("ws://127.0.0.1:4242", on => [
         on("newObject", newObject),
-        on("agentJoin", newAgent),
-        on("agentLeft", removeAgent),
-        on("update", updateAgent),
+        on("playerJoin", newPlayer),
+        on("playerLeft", removePlayer),
+        on("update", updatePlayer),
         on("turn", callback => onTurn(callback))
     ])
 })()
