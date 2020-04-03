@@ -21,11 +21,11 @@ const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + objec
 
 const spawnPlayer = () => {
     //  get a postion in the spawn box
-    let position = { x: random(-5, 5), y: random(-5, 5) }
+    let position = { x: random(1, 5), y: random(1, 5) }
 
     // make sure the postion is clear, if not regenerate it
     while ( !isEmptyPosition(position) )
-        position = { x: random(-5, 5), y: random(-5, 5) }
+        position = { x: random(1, 5), y: random(1, 5) }
 
     // make the player
     let player = {
@@ -71,6 +71,8 @@ const removeClient = client => {
     }
 }
 
+const clientHasPlayer = client => clients.has(client) && players.has(clients.get(client).id)
+
 const wait = ms => new Promise(done => setTimeout(done, ms))
 
 const minTime = 500
@@ -79,7 +81,7 @@ const maxTime = 1000
 const getPlayersMoves = () => new Promise(done => {
     let moves = new Map()
 
-    let numSent = emit("turn", on => [
+    let numSent = emit.to(clientHasPlayer, "turn", on => [
         on( barter.leave, client => {
             // delete the move from the set
             moves.delete(client)
@@ -107,13 +109,21 @@ const getPlayersMoves = () => new Promise(done => {
 let getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
 let applyAction = (action, source) => {
-    // if were moving thn just dirently apply it
+    // is were being told 
+    if ( action.type == "wait" ) return
+
+    // if were moving then just dirently apply it
     if ( action.type == "move" ) return applyEffect(action, source)
 
     // make sure the action exist
     if ( actions.has(action.type) ) {
         // get the player were targeting
         let target = players.get(action.target)
+
+        if ( target == undefined ) {
+            console.error(`unknown target ${action.target}`)
+            return false
+        }
 
         // make sure the target is out of range
         if ( getDistance( source.position, target.position ) > actions.get(action.type).range ) return false

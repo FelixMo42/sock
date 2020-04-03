@@ -2,6 +2,9 @@
 const players = new Map()
 const objects = new Map()
 
+// server events
+const connectEvent = eventmonger.newEvent()
+
 // object events
 const newObjectEvent = eventmonger.newEvent()
 
@@ -72,6 +75,7 @@ const emit = (() => {
 
     // connect to the server and register the callbacks and return the connection
     return barter("ws://127.0.0.1:4242", on => [
+        on(barter.join, () => eventmonger.fire(connectEvent)),
         on("newObject", newObject),
         on("playerJoin", newPlayer),
         on("playerLeft", removePlayer),

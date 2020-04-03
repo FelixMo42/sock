@@ -38,9 +38,9 @@ const barter = (url, events) => {
         return JSON.parse(param)
     }
 
-    socket.onopen = event => console.info("open", event)
-    socket.onclose = event => console.info("close", event)
-    socket.onerror = event => console.info("error", event)
+    socket.onopen = event => handle(barter.join, [event])
+    socket.onclose = event => handle(barter.close, [event])
+    socket.onerror = event => handle(barter.error, [event])
 
     socket.onmessage = message => {
         let [type, event, ...params] = message.data.split("\n")
@@ -56,4 +56,5 @@ const barter = (url, events) => {
 
 barter.join = Symbol("barter#open")
 barter.leave = Symbol("barter#close")
+barter.error = Symbol("barter#error")
 barter.response = Symbol("barter#response")

@@ -90,16 +90,31 @@ const barter = module.exports = (server, events) => {
         })
     })
 
-    return (event, ...params) => {
+    const emit = (event, ...params) => {
         let message = `${question}\n${event}${params.map(stringify)}`
 
-        socket.clients.forEach(client => {
-            if (client.readyState == WebSocket.OPEN) client.send(message)
-        })
+        let clients = Array.from(socket.clients.values()).filter(client => client.readyState == WebSocket.OPEN)
+
+        clients.forEach(client => client.send(message))
 
         // return a copy of the current clients as emiters
-        return Array.from(socket.clients.values(), client => client[emiter])
+        return clients.map(client => client[emiter])
     }
+
+    emit.to = (func, event, ...params) => {
+        let message = `${question}\n${event}${params.map(stringify)}`
+
+        let clients = Array.from(socket.clients.values())
+            .filter(client => client.readyState == WebSocket.OPEN)
+            .filter(client => func(client[emiter]))
+
+        clients.forEach(client => client.send(message))
+
+        // return a copy of the current clients as emiters
+        return clients.map(client => client[emiter])
+    }
+
+    return emit
 }
 
 barter.join = Symbol("barter#open")

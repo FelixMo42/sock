@@ -2,7 +2,7 @@ const MAX_SEARCH_SIZE = 1000
 
 const Vector = (x, y) => ({x, y})
 
-const path = (() => {
+const pathfind = (() => {
     let objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
 
     let isWalkable = position => {
@@ -11,7 +11,7 @@ const path = (() => {
         }
     
         for (let player of players.values()) {
-            if ( player.position.x == position.x && player.position.y == position.y ) return false
+            // if ( player.position.x == position.x && player.position.y == position.y ) return false
         }
     
         return true
