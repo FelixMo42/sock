@@ -3,27 +3,23 @@ const barter = require("./barter")
 const uuid = require("uuid").v1
 const http = require("http")
 
-let random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
-let isEmptyPosition = position => {
+const isEmptyPosition = position => {
     for (let object of objects.values()) {
-        if ( objectIncludes(object, position) ) {
-            return false
-        }
+        if ( objectIncludes(object, position) ) return false
     }
 
     for (let player of players.values()) {
-        if ( player.position.x == position.x && player.position.y == position.y ) {
-            return false
-        }
+        if ( player.position.x == position.x && player.position.y == position.y ) return false
     }
 
     return true
 }
 
-let objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
+const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
 
-let spawnPlayer = () => {
+const spawnPlayer = () => {
     //  get a postion in the spawn box
     let position = { x: random(-5, 5), y: random(-5, 5) }
 
@@ -49,7 +45,7 @@ let spawnPlayer = () => {
     return player
 }
 
-let addClient = client => {
+const addClient = client => {
     // tell the new client of all the objects in the world
     for (let object of objects.values()) client("newObject", object)
 
@@ -57,7 +53,7 @@ let addClient = client => {
     for (let outher of players.values()) client("playerJoin", outher)
 }
 
-let removePlayer = player => {
+const removePlayer = player => {
     // tell the gang that the player left
     emit("playerLeft", player.id)
 
@@ -65,7 +61,7 @@ let removePlayer = player => {
     players.delete(player.id)
 }
 
-let removeClient = client => {
+const removeClient = client => {
     if ( clients.has(client) ) {
         // remove the player that the client is controlling
         removePlayer( clients.get(client) )
@@ -75,12 +71,12 @@ let removeClient = client => {
     }
 }
 
-let wait = ms => new Promise(done => setTimeout(done, ms))
+const wait = ms => new Promise(done => setTimeout(done, ms))
 
 const minTime = 500
 const maxTime = 1000
 
-let getPlayersMoves = () => new Promise(done => {
+const getPlayersMoves = () => new Promise(done => {
     let moves = new Map()
 
     let numSent = emit("turn", on => [
@@ -207,7 +203,8 @@ const actions = new Map()
 const objects = new Map()
 
 objects.set(0, { id: 0, x: 6, y: 0, width: 1, height: 10 })
-actions.set(0, { id: 0, name: "punch", range: 1, value: 25 })
+actions.set(0, { id: 0, name: "slice", range: 1, value: 25 })
+actions.set(1, { id: 1, name: "punch", range: 1, value: 10 })
 
 // set up express app
 const app = express()

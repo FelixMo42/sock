@@ -1,12 +1,21 @@
-<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-<script src="api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script src="https://unpkg.com/uuid@latest/dist/umd/uuidv1.min.js"></script>
+<script src="./lib/eventmonger.js"></script>
+<script src="./lib/barter.js"></script>
+<script src="./lib/api.js"></script>
+
+<script src="./lib/heap.js"></script>
+<script src="./lib/astar.js"></script>
+
 <script>
+
+console.log( path( Vector(1, 1) , Vector(5, 5) ) )
 
 function onTurn(callback) {
     callback({
         type: "move",
-        x: getPlayer().position.x + 1,
-        y: getPlayer().position.y + 1
+        x: 0,
+        y: 0
     })
 }
 
