@@ -55,7 +55,6 @@ class Heap {
 
         // while its less than its parent
         while (this.heap[index].priority < this.heap[parent].priority) {
-
             // flip the node and its parent
             [this.heap[index], this.heap[parent]] = [this.heap[parent], this.heap[index]]
 

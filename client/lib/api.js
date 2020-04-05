@@ -4,6 +4,7 @@ const objects = new Map()
 
 // server events
 const connectEvent = eventmonger.newEvent()
+const disconnectEvent = eventmonger.newEvent()
 
 // object events
 const newObjectEvent = eventmonger.newEvent()
@@ -12,6 +13,8 @@ const newObjectEvent = eventmonger.newEvent()
 const newPlayerEvent = eventmonger.newEvent()
 const updatePlayerEvent = eventmonger.newEvent()
 const removePlayerEvent = eventmonger.newEvent()
+
+const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
 // the controlled player id, -1 means no player
 let ID = -1
@@ -65,7 +68,7 @@ const emit = (() => {
 
     function removePlayer(id) {
         if (id == ID) {
-            // we were removed!
+            ID = -1
         }
 
         eventmonger.fire(removePlayerEvent, players.get(id))
@@ -76,6 +79,7 @@ const emit = (() => {
     // connect to the server and register the callbacks and return the connection
     return barter("ws://127.0.0.1:4242", on => [
         on(barter.join, () => eventmonger.fire(connectEvent)),
+        on(barter.leave, () => eventmonger.fire(disconnectEvent)),
         on("newObject", newObject),
         on("playerJoin", newPlayer),
         on("playerLeft", removePlayer),

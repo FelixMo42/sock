@@ -28,6 +28,9 @@ function onTurn(callback) {
     // is we have no target then we just wait until the next turn
     if (!target) return callback({ type: "wait" })
 
+    // is were close enough to attack then do that
+    if ( getDistance( getPlayer().position , target.position ) <= 1 ) return callback({ type: 1, target: target.id })
+
     // try to path find to the target
     let path = pathfind( getPlayer().position , target.position )
 

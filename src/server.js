@@ -3,7 +3,15 @@ const barter = require("./barter")
 const uuid = require("uuid").v1
 const http = require("http")
 
+const wait = ms => new Promise(done => setTimeout(done, ms))
+
 const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+
+const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
+
+const clientHasPlayer = client => clients.has(client) && players.has(clients.get(client).id)
+
+const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
 const isEmptyPosition = position => {
     for (let object of objects.values()) {
@@ -16,8 +24,6 @@ const isEmptyPosition = position => {
 
     return true
 }
-
-const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
 
 const spawnPlayer = () => {
     //  get a postion in the spawn box
@@ -62,18 +68,12 @@ const removePlayer = player => {
 }
 
 const removeClient = client => {
-    if ( clients.has(client) ) {
-        // remove the player that the client is controlling
-        removePlayer( clients.get(client) )
+    // remove the player that the client is controlling
+    if ( clientHasPlayer(client) ) removePlayer( clients.get(client) )
 
-        // remove the client from are list of active clients
-        clients.delete(client)
-    }
+    // remove the client from are list of active clients
+    clients.delete(client)
 }
-
-const clientHasPlayer = client => clients.has(client) && players.has(clients.get(client).id)
-
-const wait = ms => new Promise(done => setTimeout(done, ms))
 
 const minTime = 500
 const maxTime = 1000
@@ -106,10 +106,8 @@ const getPlayersMoves = () => new Promise(done => {
     wait(maxTime).then(() => done(moves))
 })
 
-let getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
-
-let applyAction = (action, source) => {
-    // is were being told 
+const applyAction = (action, source) => {
+    // is were being told to just chill for a turn
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
@@ -135,7 +133,7 @@ let applyAction = (action, source) => {
     console.error(`unknown action ${action.type}`)
 }
 
-let applyEffect = (effect, target) => {
+const applyEffect = (effect, target) => {
     if (effect.type == "move") {
         target.target.x = effect.x
         target.target.y = effect.y
@@ -146,7 +144,7 @@ let applyEffect = (effect, target) => {
     }
 }
 
-let tick = async () => {
+const tick = async () => {
     // ask the players what they want to do
     let delay = wait(minTime)
     let moves = await getPlayersMoves()
@@ -202,7 +200,7 @@ let tick = async () => {
     players.forEach(player => emit("update", player))
 }
 
-let play = async () => {
+const play = async () => {
     while (true) await tick()
 }
 
