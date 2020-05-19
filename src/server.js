@@ -13,6 +13,9 @@ const clientHasPlayer = client => clients.has(client) && players.has(clients.get
 
 const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
+const addVector = a => b => ({x: a.x + b.x, y: a.y + b.y})
+const addNumber = a => b => a + b
+
 const isEmptyPosition = position => {
     for (let object of objects.values()) {
         if ( objectIncludes(object, position) ) return false
@@ -106,42 +109,69 @@ const getPlayersMoves = () => new Promise(done => {
     wait(maxTime).then(() => done(moves))
 })
 
+// list of aspects that agents can have
+const hp = Symbol("aspect#hp")
+const position = Symbol("aspect#position")
+
 const applyAction = (action, source) => {
     // is were being told to just chill for a turn
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
-    if ( action.type == "move" ) return applyEffect(action, source)
+    if ( action.type == "move" ) return applyEffect({ type: "position", ...action }, source)
 
     // make sure the action exist
     if ( actions.has(action.type) ) {
         // get the player were targeting
         let target = players.get(action.target)
 
-        if ( target == undefined ) {
-            console.error(`unknown target ${action.target}`)
-            return false
-        }
+        // we have no valid target, let bail
+        if ( target == undefined ) return console.error(`unknown target ${action.target}`)
 
         // make sure the target is out of range
-        if ( getDistance( source.position, target.position ) > actions.get(action.type).range ) return false
+        if ( getDistance( source.position, target.position ) > actions.get(action.type).range ) return
 
         // apply the damage effect
-        return applyEffect({ type: "damage", value: actions.get(action.type).value }, target)
+        applyEffect({ type: "hp", value: -actions.get(action.type).value }, target)
     }
 
     console.error(`unknown action ${action.type}`)
 }
 
-const applyEffect = (effect, target) => {
-    if (effect.type == "move") {
-        target.target.x = effect.x
-        target.target.y = effect.y
-    }
+const getEffect = aspect => effects.has(aspect) ? effects.get(aspect) : new Map()
 
-    if (effect.type == "damage") {
-        target.hp -= effect.value
+const setEffect = (aspect, target, callback) => {
+    // we dont have the effects map of this aspect yet, lets add it
+    if ( !effects.has(aspect) ) effects.set(aspect, new Map())
+
+    // get the effects map for this aspect
+    let effect = effects.get(aspect)
+
+    // get the previus effect for this 
+    let previous = effect.has(target) ? effect.get(target) : target[aspect]
+
+    // and finally set it to the new value
+    effect.set( target, callback( previous ) )
+}
+
+const applyEffect = (effect, target) => {
+    if (effect.type == position) setEffect("position", target, addVector(effect))
+
+    if (effect.type == hp) setEffect("hp", target, addNumber(effect.value))
+}
+
+const filterEffect = (aspect, callback) => {
+    if ( !effects.has(aspect) ) return
+
+    let effect = effects.get(aspect)
+
+    for ( let [player, value] of effect ) {
+        if ( !callback(player, aspect) ) effect.delete( player )
     }
+}
+
+const processEffect = (aspect, callback) => {
+    if ( effects.has(aspect) ) effects.get(aspect).forEach(callback)
 }
 
 const tick = async () => {
@@ -150,50 +180,46 @@ const tick = async () => {
     let moves = await getPlayersMoves()
     await delay
     
+    // clear the list of effects so that we can repopulate it
+    effects.clear()
+
     // apply the actions
     moves.forEach(applyAction)
 
-    // figure out if anyone is dead
-    players.forEach(player => {
+    // look at the change in everyones hp
+    processEffect("hp", (player, hp) => {
+        // set are hp to the new hp
+        player.hp = hp
+
         // were out of health, and therefore dead
         if (player.hp <= 0) removePlayer(player)
     })
 
-    // figure out if the requested movement is allowed
-    players.forEach(player => {
+    filterEffect("position", ({x, y}, player) => {
         // if were not moving, then were done here 
-        if (player.position.x == player.target.x && player.position.y == player.target.y) return
-
-        // make sure the player is only moving to an adjacent square
-        if (
-            Math.abs( player.position.x - player.target.x ) > 1 ||
-            Math.abs( player.position.y - player.target.y ) > 1
-        ) return
+        if (player.position.x == x && player.position.y == y) return false
 
         // make sure the new position dosent overlap with any objects
-        for (let object of objects.values()) if ( objectIncludes(object, player.target) ) return
+        for (let object of objects.values()) if ( objectIncludes(object, player.target) ) return false
 
-        // make sure it dosent overlap with any outher players
-        for (let outher of players.values()) {
-            // just me, skip
-            if (outher == player) continue
+        // make sure the player is only moving to an adjacent square
+        if ( Math.abs( player.position.x - x ) > 1 || Math.abs( player.position.y - y ) > 1 ) return false
 
-            // were both going to the same place, not cool
-            if (player.target.x == outher.target.x && player.target.y == outher.target.y) return
-
-            // were going to were the outher guy left from, also not cool, for now
-            if (player.target.x == outher.position.x && player.target.y == outher.position.y) return
-        }
-
-        // update the players positions
-        player.position.x = player.target.x
-        player.position.y = player.target.y
+        // we want to keep this one
+        return true
     })
 
-    // reset the target position
-    players.forEach(player => {
-        player.target.x = player.position.x
-        player.target.y = player.position.y
+    let targetPosition = getEffect("position")
+
+    // figure out if the requested movement is allowed
+    processEffect("position", (target, player) => {
+        
+    })
+
+    processEffect("position", (target, player) => {
+        // update the players positions
+        player.position.x = target.x
+        player.position.y = target.y
     })
 
     // tell the world news of the players changes
@@ -209,6 +235,7 @@ const clients = new Map()
 const players = new Map()
 const actions = new Map()
 const objects = new Map()
+const effects = new Map()
 
 objects.set(0, { id: 0, x: 6, y: 0, width: 1, height: 10 })
 actions.set(0, { id: 0, name: "slice", range: 1, value: 25 })

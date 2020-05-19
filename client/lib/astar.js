@@ -88,3 +88,35 @@ const pathfind = (() => {
         return []
     }
 })()
+
+const raycast = (() => {
+    function *range(min, max) {
+        let sign = Math.sign(max)
+    
+        for (let i = min; i < Math.abs(max); i++) yield sign * i
+    }
+
+    return (source, target) => {
+        let path = []
+        
+        // get how far it going in either direction
+        let deltaX = target.x - source.x
+        let deltaY = target.y - source.y
+
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            let slope = deltaY / deltaX
+            
+            for (let x of range(1, deltaX)) path.push( Vector(source.x + x, source.y + Math.floor(slope * x)) )
+        } else {
+            let slope = deltaX / deltaY
+
+            for (let y of range(1, deltaY)) path.push(Vector(source.x + Math.floor(slope * y), source.y + y))
+        }
+
+        // add the final point to the path
+        path.push(Vector(target.x, target.y))
+
+        // return the path
+        return path
+    }
+})()

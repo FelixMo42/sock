@@ -1,48 +1,6 @@
-class EventQueue {
-    list = []
-
-    clear() {
-        this.list = []
-    }
-
-    set(list) {
-        this.list = list
-
-        this.triggerCallback()
-    }
-
-    add(item) {
-        this.list.unshift(item)
-
-        this.triggerCallback()
-    }
-
-    forEach(callback) {
-        this.list.forEach(callback)
-    }
-
-    map(callback) {
-        return this.list.map(callback)
-    }
-
-    triggerCallback() {
-        if (this.list.length == 0)
-            return
-
-        if (this.callback != null) {
-            this.callback( this.list.pop() )
-            this.callback = null
-        }
-    }
-
-    next(callback) {
-        if (this.list.length > 0) {
-            callback( this.list.pop() )
-        } else {
-            this.callback = callback
-        }
-    }
-}
+/*/////////////////////////////////*/
+/*| utility functions + variables |*/
+/*/////////////////////////////////*/
 
 const moves = new EventQueue()
 
@@ -52,6 +10,27 @@ const center = meter / 2
 const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
 
 const div = (a, b) => Math.floor(a / b)
+
+/*////////////////////*/
+/*| handle callbacks |*/
+/*////////////////////*/
+
+// handle object events
+const drawObject = ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
+eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw: drawObject })) )
+
+// handle player events
+const drawPlayer = ({x, y}) => ellipse(x * meter + center, y * meter + center, 30, 30)
+eventmonger.on(newPlayerEvent, player => addSprite(player.id, ({ ...player.position, draw: drawPlayer })) )
+eventmonger.on(updatePlayerEvent, player => goto(player.id, player.position, 500))
+eventmonger.on(removePlayerEvent, player => removeSprite(player.id))
+
+// handle a turn
+const onTurn = callback => moves.next(callback)
+
+/*/////////////////*/
+/*| p5 functions  |*/
+/*/////////////////*/
 
 function setup() {
     createCanvas(windowWidth, windowHeight)
@@ -67,28 +46,22 @@ function keyPressed() {
     }
 }
 
-function getCameraPosition() {
-    if ( hasPlayer() ) {
-        return [
-            -sprites.get(getPlayer().id).x * meter + width / 2,
-            -sprites.get(getPlayer().id).y * meter + height / 2
-        ]
+function mouseReleased() {
+    // we dont have a player, we can do anything
+    if ( !hasPlayer() ) return
+
+    // clear the previus path
+    moves.clear()
+
+    // is the shift key down?
+    if ( keyIsDown(16) ) {
+        // attack a target
+        attack({ x: mouseTileX(), y: mouseTileY() })
     } else {
-        return [ 0, 0 ]
+        // tell the player to where were pressing
+        goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
     }
 }
-
-eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw:
-    ({x, y, width, height}) => rect(x * meter, y * meter, width * meter, height * meter)
-})) )
-
-eventmonger.on(newPlayerEvent, player => addSprite(player.id, ({ ...player.position, draw:
-    ({x, y}) => ellipse(x * meter + center, y * meter + center, 30, 30)
-})) )
-
-eventmonger.on(updatePlayerEvent, player => goto(player.id, player.position, 500))
-
-eventmonger.on(removePlayerEvent, player => removeSprite(player.id))
 
 function draw() {
     // move around the canvas
@@ -111,36 +84,27 @@ function draw() {
     drawSprites()
 }
 
-function *range(min, max) {
-    let sign = Math.sign(max)
+/*///////////////////////*/
+/*| viewpoint functions |*/
+/*///////////////////////*/
 
-    for (let i = min; i < Math.abs(max); i++) yield sign * i
-}
-
-function mouseTileX() {
-    return div(mouseX - getCameraPosition()[0], meter)
-}
-
-function mouseTileY() {
-    return div(mouseY - getCameraPosition()[1], meter)
-}
-
-function mouseReleased() {
-    // we dont have a player, we can do anything
-    if ( !hasPlayer() ) return
-
-    // clear the previus path
-    moves.clear()
-
-    // is the shift key down?
-    if ( keyIsDown(16) ) {
-        // attack a target
-        attack({ x: mouseTileX(), y: mouseTileY() })
+function getCameraPosition() {
+    if ( hasPlayer() ) {
+        return [
+            -sprites.get(getPlayer().id).x * meter + width / 2,
+            -sprites.get(getPlayer().id).y * meter + height / 2
+        ]
     } else {
-        // tell the player to where were pressing
-        goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
+        return [ 0, 0 ]
     }
 }
+
+const mouseTileX = () => div(mouseX - getCameraPosition()[0], meter)
+const mouseTileY = () => div(mouseY - getCameraPosition()[1], meter)
+
+/*///////////////////*/
+/*| moves functions |*/
+/*///////////////////*/
 
 function getPlayerAtPosition(position) {
     for (let player of players.values()) {
@@ -167,36 +131,6 @@ function attack(target) {
 }
 
 function goToPoint(source, target) {
-    // how far do we want to go?
-    let deltaX = target.x - source.x
-    let deltaY = target.y - source.y
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        let slope = deltaY / deltaX
-        
-        for (let x of range(1, deltaX)) {
-            moves.add({
-                type: "move",
-                x: source.x + x,
-                y: source.y + Math.floor(slope * x)
-            })
-        }
-    } else {
-        let slope = deltaX / deltaY
-
-        for (let y of range(1, deltaY)) {
-            moves.add({
-                type: "move",
-                x: source.x + Math.floor(slope * y),
-                y: source.y + y
-            })
-        }
-    }
-
-    // add the final point to the path
-    moves.add({type: "move", x: target.x, y: target.y})
-}
-
-function onTurn(callback) {
-    moves.next(callback)
+    // pathfind to the target location then add all the points in the path to the event queue
+    pathfind(source, target).forEach(point => moves.add({type: "move", ...point}))
 }
