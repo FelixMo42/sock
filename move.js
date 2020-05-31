@@ -18,8 +18,6 @@ const Step = ([x0, y0], [x1, y1], callback) => {
             y0 + dy / dx * sx * x 
         ]
 
-        console.log(pos)
-
         if ( callback( pos ) ) return pos
     }
     
@@ -28,8 +26,6 @@ const Step = ([x0, y0], [x1, y1], callback) => {
             x0 + dx / dy * sy * y,
             y0 + sy * y
         ]
-
-        console.log(pos)
 
         if ( callback(pos) ) return pos
     }
@@ -40,7 +36,8 @@ const Step = ([x0, y0], [x1, y1], callback) => {
 // 
 
 const Tick = (players) => {
-    Move(players)
+    // move all the players
+    players.forEach( player => Move(players, player) )
 }
 
 const Move = (players, player) => {
@@ -70,6 +67,5 @@ let players = [
     Player( [4, 4], [4, 4] )
 ]
 
-//Tick(players)
-Move(players, players[0])
+Tick(players)
 Draw(players)
