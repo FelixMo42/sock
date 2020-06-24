@@ -132,5 +132,5 @@ function attack(target) {
 
 function goToPoint(source, target) {
     // pathfind to the target location then add all the points in the path to the event queue
-    pathfind(source, target).forEach(point => moves.add({type: "move", ...point}))
+    pathfind(source, target).forEach(point => moves.add({type: "move", value: point}))
 }

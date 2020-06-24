@@ -13,17 +13,15 @@ const clientHasPlayer = client => clients.has(client) && players.has(clients.get
 
 const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
-const addVector = a => b => ({x: a.x + b.x, y: a.y + b.y})
-const addNumber = a => b => a + b
+const addVector = a => (b={x:0,y:0}) => ({x: a.x + b.x, y: a.y + b.y})
+const addNumber = a => (b=0) => a + b
 
 const isEmptyPosition = position => {
-    for (let object of objects.values()) {
+    for (let object of objects.values())
         if ( objectIncludes(object, position) ) return false
-    }
 
-    for (let player of players.values()) {
+    for (let player of players.values())
         if ( player.position.x == position.x && player.position.y == position.y ) return false
-    }
 
     return true
 }
@@ -110,15 +108,16 @@ const getPlayersMoves = () => new Promise(done => {
 })
 
 // list of aspects that agents can have
-const hp = Symbol("aspect#hp")
-const position = Symbol("aspect#position")
+const HP = "hp"//Symbol("aspect#hp")
+const POSITION = "position"//Symbol("aspect#position")
 
 const applyAction = (action, source) => {
     // is were being told to just chill for a turn
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
-    if ( action.type == "move" ) return applyEffect({ type: "position", ...action }, source)
+    console.log("move to ", action.value)
+    if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.value }, source)
 
     // make sure the action exist
     if ( actions.has(action.type) ) {
@@ -132,7 +131,7 @@ const applyAction = (action, source) => {
         if ( getDistance( source.position, target.position ) > actions.get(action.type).range ) return
 
         // apply the damage effect
-        applyEffect({ type: "hp", value: -actions.get(action.type).value }, target)
+        applyEffect({ type: HP, value: -actions.get(action.type).value }, target)
     }
 
     console.error(`unknown action ${action.type}`)
@@ -148,16 +147,16 @@ const setEffect = (aspect, target, callback) => {
     let effect = effects.get(aspect)
 
     // get the previus effect for this 
-    let previous = effect.has(target) ? effect.get(target) : target[aspect]
+    let previous = effect.get(target)
 
     // and finally set it to the new value
     effect.set( target, callback( previous ) )
 }
 
 const applyEffect = (effect, target) => {
-    if (effect.type == position) setEffect("position", target, addVector(effect))
+    if (effect.type == POSITION) setEffect(POSITION, target, addVector(effect.value))
 
-    if (effect.type == hp) setEffect("hp", target, addNumber(effect.value))
+    if (effect.type == HP) setEffect(HP, target, addNumber(effect.value))
 }
 
 const filterEffect = (aspect, callback) => {
@@ -165,9 +164,7 @@ const filterEffect = (aspect, callback) => {
 
     let effect = effects.get(aspect)
 
-    for ( let [player, value] of effect ) {
-        if ( !callback(player, aspect) ) effect.delete( player )
-    }
+    for ( let [player] of effect ) if ( !callback(player, aspect) ) effect.delete( player )
 }
 
 const processEffect = (aspect, callback) => {
@@ -184,10 +181,10 @@ const tick = async () => {
     effects.clear()
 
     // apply the actions
-    moves.forEach(applyAction)
+    moves.forEach( applyAction )
 
     // look at the change in everyones hp
-    processEffect("hp", (player, hp) => {
+    processEffect(HP, (player, hp) => {
         // set are hp to the new hp
         player.hp = hp
 
@@ -195,31 +192,18 @@ const tick = async () => {
         if (player.hp <= 0) removePlayer(player)
     })
 
-    filterEffect("position", ({x, y}, player) => {
+    processEffect(POSITION, (target, player) => {
         // if were not moving, then were done here 
-        if (player.position.x == x && player.position.y == y) return false
+        if (player.position.x == target.x && player.position.y == target.y) return false
 
-        // make sure the new position dosent overlap with any objects
-        for (let object of objects.values()) if ( objectIncludes(object, player.target) ) return false
-
-        // make sure the player is only moving to an adjacent square
-        if ( Math.abs( player.position.x - x ) > 1 || Math.abs( player.position.y - y ) > 1 ) return false
-
-        // we want to keep this one
-        return true
-    })
-
-    let targetPosition = getEffect("position")
-
-    // figure out if the requested movement is allowed
-    processEffect("position", (target, player) => {
-        
-    })
-
-    processEffect("position", (target, player) => {
-        // update the players positions
-        player.position.x = target.x
-        player.position.y = target.y
+        if ( isEmptyPosition( target ) ) {
+            console.log("position is ", target)
+            player.position.x = target.x
+            player.position.y = target.y
+        } else {
+            target.x = player.position.x
+            target.y = player.position.y          
+        }
     })
 
     // tell the world news of the players changes

@@ -38,7 +38,7 @@ function onTurn(callback) {
     if ( path.length == 0 ) return callback({ type: "wait" })
 
     // lets move allong the path
-    callback({ type: "move", ...path[0] })
+    callback({ type: "move", value: path[0] })
 }
 
 </script>
