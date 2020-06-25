@@ -41,16 +41,14 @@ function windowResized() {
 }
 
 function keyPressed() {
-    if ( keyCode == 32 ) {
-        spawnPlayer() 
-    }
+    if ( keyCode == 32 ) spawnPlayer()
 }
 
 function mouseReleased() {
     // we dont have a player, we can do anything
     if ( !hasPlayer() ) return
 
-    // clear the previus path
+    // clear the previous path
     moves.clear()
 
     // is the shift key down?
@@ -117,7 +115,7 @@ function attack(target) {
     let player = getPlayerAtPosition(target)
 
     // theres no player here, its a lie
-    if (!player) return false
+    if ( !player ) return false
 
     // add this attack to our list of moves
     moves.add({

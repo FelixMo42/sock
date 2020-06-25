@@ -2,6 +2,7 @@ const express = require("express")
 const barter = require("./barter")
 const uuid = require("uuid").v1
 const http = require("http")
+const fs = require("fs-extra")
 
 const wait = ms => new Promise(done => setTimeout(done, ms))
 
@@ -108,15 +109,14 @@ const getPlayersMoves = () => new Promise(done => {
 })
 
 // list of aspects that agents can have
-const HP = "hp"//Symbol("aspect#hp")
-const POSITION = "position"//Symbol("aspect#position")
+const HP = Symbol("aspect#hp")
+const POSITION = Symbol("aspect#position")
 
 const applyAction = (action, source) => {
     // is were being told to just chill for a turn
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
-    console.log("move to ", action.value)
     if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.value }, source)
 
     // make sure the action exist
@@ -197,7 +197,6 @@ const tick = async () => {
         if (player.position.x == target.x && player.position.y == target.y) return false
 
         if ( isEmptyPosition( target ) ) {
-            console.log("position is ", target)
             player.position.x = target.x
             player.position.y = target.y
         } else {
@@ -216,14 +215,10 @@ const play = async () => {
 
 // maps to keep track of all the users and outher stuff
 const clients = new Map()
+const effects = new Map()
 const players = new Map()
 const actions = new Map()
 const objects = new Map()
-const effects = new Map()
-
-objects.set(0, { id: 0, x: 6, y: 0, width: 1, height: 10 })
-actions.set(0, { id: 0, name: "slice", range: 1, value: 25 })
-actions.set(1, { id: 1, name: "punch", range: 1, value: 10 })
 
 // set up express app
 const app = express()
@@ -253,6 +248,15 @@ const emit = barter(server, on => [
         reportId(player.id)
     })
 ])
+
+// load in the data from are database
+fs.readJson('./db.json').then(db => {
+    for (let player of db.players) {}
+
+    for (let object of db.objects) objects.set( object.id , object )
+
+    for (let action of db.actions) actions.set( action.id , action )
+})
 
 // listen in on our fav port
 server.listen(4242)

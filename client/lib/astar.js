@@ -1,4 +1,4 @@
-const MAX_SEARCH_SIZE = 1000
+const MAX_SEARCH_SIZE = 100000
 
 const Vector = (x, y) => ({x, y})
 
@@ -84,6 +84,9 @@ const pathfind = (() => {
 
             i += 1
         }
+
+        if ( open.length == 0     ) console.log("pathfinder error: no path")
+        if ( i == MAX_SEARCH_SIZE ) console.log("pathfinder error: too far")
 
         return []
     }
