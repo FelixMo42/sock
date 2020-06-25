@@ -24,7 +24,7 @@ let ID = name
 // function spawnPlayer() {
 //     // ask the server to spawn us an player
 //     emit("spawn", on => [
-//         on(barter.response, id => {
+//         on(barter.reply, id => {
 //             ID = id
 //         })
 //     ])
@@ -53,6 +53,7 @@ const emit = (() => {
     // player callbacks
 
     function newPlayer(player) {
+        
         players.set(player.id, player)
 
         eventmonger.fire(newPlayerEvent, player)
@@ -72,7 +73,7 @@ const emit = (() => {
 
     // connect to the server and register the callbacks and return the connection
     return barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
-        on(barter.join, () => eventmonger.fire(connectEvent)),
+        on(barter.enter, () => eventmonger.fire(connectEvent)),
         on(barter.leave, () => eventmonger.fire(disconnectEvent)),
         on("newObject", newObject),
         on("playerJoin", newPlayer),
@@ -81,3 +82,6 @@ const emit = (() => {
         on("turn", callback => onTurn((turn) => callback({id: ID, turn})))
     ])
 })()
+
+// log that the server disconnected
+eventmonger.on( disconnectEvent, () => console.log("server closed") )

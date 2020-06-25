@@ -41,7 +41,6 @@ function windowResized() {
 }
 
 function keyPressed() {
-    if ( keyCode == 32 ) spawnPlayer()
 }
 
 function mouseReleased() {
@@ -124,7 +123,7 @@ function attack(target) {
         target: player.id
     })
 
-    // return news of are succses
+    // return news of are success
     return true
 }
 

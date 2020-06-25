@@ -10,7 +10,7 @@ const makeEventHandler = func => {
         if (map.has(event)) return map.get(event)(...params)
 
         // just log it
-        console.error(`no handler for event `, event)
+        console.error(`no handler for event `, event, " : ", params)
     }
 }
 
@@ -38,14 +38,14 @@ const barter = (url, events, context) => {
         return JSON.parse(param)
     }
 
-    socket.onopen  = event => handle(barter.join, [event])
-    socket.onclose = event => handle(barter.close, [event])
+    socket.onopen  = event => handle(barter.enter, [event])
+    socket.onclose = event => handle(barter.leave, [event])
     socket.onerror = event => handle(barter.error, [event])
 
     socket.onmessage = message => {
         let [type, event, ...params] = message.data.split("\n")
 
-        if (type == response) return answer.get(event)(barter.response, params.map(parse))
+        if (type == response) return answer.get(event)(barter.reply, params.map(parse))
         if (type == question) return handle(event, params.map(parse))
 
         console.error(`invalide type ${type}`)
@@ -54,7 +54,7 @@ const barter = (url, events, context) => {
     return (event, ...params) => socket.send(`${question}\n${event}${params.map(stringify)}`)
 }
 
-barter.join = Symbol("barter#open")
+barter.enter = Symbol("barter#enter")
 barter.leave = Symbol("barter#close")
 barter.error = Symbol("barter#error")
-barter.response = Symbol("barter#response")
+barter.reply = Symbol("barter#reply")

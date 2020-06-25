@@ -80,6 +80,9 @@ const barter = module.exports = (server, events) => {
         })
     })
 
+    // log that the socket has closed
+    socket.on("close", () => console.log("websocket closed"))
+
     setInterval(() => {
         socket.clients.forEach(client => {
             if (client.readyState == WebSocket.OPEN) {
@@ -118,6 +121,6 @@ const barter = module.exports = (server, events) => {
     return emit
 }
 
-barter.join = Symbol("barter#open")
+barter.join = Symbol("barter#join")
 barter.leave = Symbol("barter#leave")
 barter.response = Symbol("barter#response")

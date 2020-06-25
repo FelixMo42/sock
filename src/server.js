@@ -3,6 +3,14 @@ const barter = require("./barter")
 const uuid = require("uuid").v1
 const http = require("http")
 const fs = require("fs-extra")
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
+
+// set up the databases
+const loadJsonDB = (file) =>  low(new FileSync(file))
+const players = loadJsonDB("./data/players.json")
+const actions = loadJsonDB("./data/actions.json")
+const objects = loadJsonDB("./data/objects.json")
 
 const wait = ms => new Promise(done => setTimeout(done, ms))
 
@@ -34,14 +42,10 @@ const spawnPlayer = id => {
         position = { x: random(1, 5), y: random(1, 5) }
 
     // make the player
-    let player = {
-        id, hp: 100, mp: 100,
-        position: { ...position },
-        target: { ...position }
-    }
+    let player = { id, hp: 100, mp: 100, position }
 
     // add the new player to the list of players
-    players.set(player.id, player)
+    players.set(player.id, player).write()
 
     // tell all the cients that a new player has connected
     emit("playerJoin", player)
@@ -58,7 +62,7 @@ const addClient = (client, {ids}) => {
     for (let outher of players.values()) client("playerJoin", outher)
 
     // make sure we have all the players the agent wants
-    for (let id of ids) if ( !players.has(id) ) spawnPlayer( id )
+    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer( id )
 }
 
 const removeClient = client => {}
@@ -97,7 +101,7 @@ const getPlayersMoves = () => new Promise(done => {
             responses.add( client )
 
             // bind the move to the agent the client is acting for
-            moves.set( players.get(id), turn)
+            moves.set( id, turn)
             
             // everyone has responded, were done here
             if (responses.size == numSent) done(moves)
@@ -194,19 +198,24 @@ const tick = async () => {
 
     processEffect(POSITION, (target, player) => {
         // if were not moving, then were done here 
-        if (player.position.x == target.x && player.position.y == target.y) return false
+        if (
+            players.get(player).value().position.x == target.x &&
+            players.get(player).value().position.y == target.y
+        ) return false
 
         if ( isEmptyPosition( target ) ) {
-            player.position.x = target.x
-            player.position.y = target.y
+            players.get(player)
+                   .set(`position.x`, target.x)
+                   .set(`position.y`, target.y)
+                   .write()
         } else {
             target.x = player.position.x
-            target.y = player.position.y          
+            target.y = player.position.y    
         }
     })
 
     // tell the world news of the players changes
-    players.forEach(player => emit("update", player))
+    for (let player of players.values()) emit("update", player)
 }
 
 const play = async () => {
@@ -215,9 +224,6 @@ const play = async () => {
 
 // maps to keep track of all the users and outher stuff
 const effects = new Map()
-const players = new Map()
-const actions = new Map()
-const objects = new Map()
 
 // set up express app
 const app = express()
@@ -230,22 +236,8 @@ const server = http.createServer(app)
 const emit = barter(server, on => [
     // deal with users leaving and joining
     on(barter.join, addClient),
-    on(barter.leave, removeClient),
-    
-    // a users asked us to spawn an player for them
-    on("spawn", (client, reportId) => {
-        
-    })
+    on(barter.leave, removeClient)
 ])
-
-// load in the data from are database
-fs.readJson('./db.json').then(db => {
-    for (let player of db.players) {}
-
-    for (let object of db.objects) objects.set( object.id , object )
-
-    for (let action of db.actions) actions.set( action.id , action )
-})
 
 // listen in on our fav port
 server.listen(4242)
