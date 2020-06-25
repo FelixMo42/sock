@@ -14,9 +14,9 @@ const makeEventHandler = func => {
     }
 }
 
-const barter = (url, events) => {
-    const socket = new WebSocket(url)
+const barter = (url, events, context) => {
     const handle = makeEventHandler(events)
+    const socket = new WebSocket(url, context)
     const answer = new Map()
 
     const stringify = param => {
@@ -38,7 +38,7 @@ const barter = (url, events) => {
         return JSON.parse(param)
     }
 
-    socket.onopen = event => handle(barter.join, [event])
+    socket.onopen  = event => handle(barter.join, [event])
     socket.onclose = event => handle(barter.close, [event])
     socket.onerror = event => handle(barter.error, [event])
 

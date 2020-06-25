@@ -10,8 +10,6 @@ const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
 const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
 
-const clientHasPlayer = client => clients.has(client) && players.has(clients.get(client).id)
-
 const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
 const addVector = a => (b={x:0,y:0}) => ({x: a.x + b.x, y: a.y + b.y})
@@ -27,7 +25,7 @@ const isEmptyPosition = position => {
     return true
 }
 
-const spawnPlayer = () => {
+const spawnPlayer = id => {
     //  get a postion in the spawn box
     let position = { x: random(1, 5), y: random(1, 5) }
 
@@ -37,8 +35,7 @@ const spawnPlayer = () => {
 
     // make the player
     let player = {
-        id: uuid(),
-        hp: 100, mp: 100,
+        id, hp: 100, mp: 100,
         position: { ...position },
         target: { ...position }
     }
@@ -53,13 +50,18 @@ const spawnPlayer = () => {
     return player
 }
 
-const addClient = client => {
+const addClient = (client, {ids}) => {
     // tell the new client of all the objects in the world
     for (let object of objects.values()) client("newObject", object)
 
     // tell the new client of all the players in the server
     for (let outher of players.values()) client("playerJoin", outher)
+
+    // make sure we have all the players the agent wants
+    for (let id of ids) if ( !players.has(id) ) spawnPlayer( id )
 }
+
+const removeClient = client => {}
 
 const removePlayer = player => {
     // tell the gang that the player left
@@ -69,38 +71,36 @@ const removePlayer = player => {
     players.delete(player.id)
 }
 
-const removeClient = client => {
-    // remove the player that the client is controlling
-    if ( clientHasPlayer(client) ) removePlayer( clients.get(client) )
-
-    // remove the client from are list of active clients
-    clients.delete(client)
-}
-
 const minTime = 500
 const maxTime = 1000
 
 const getPlayersMoves = () => new Promise(done => {
-    let moves = new Map()
+    let responses = new Set()
+    let moves     = new Map()
 
-    let numSent = emit.to(clientHasPlayer, "turn", on => [
+    let numSent = emit("turn", on => [
         on( barter.leave, client => {
-            // delete the move from the set
-            moves.delete(client)
+            // remove are record of this client responding
+            responses.delete(client)
+
+            // todo: remove the clients players moves from the list
 
             // welp, one less response we need to wait for
             numSent -= 1
 
-            // there are no more connected players, so were done
+            // there are no more connected agents, so were done
             if (numSent == 0) done(moves)
         } ),
 
-        on( barter.response, (client, move) => {
-            // bind the move to the client
-            moves.set( clients.get(client), move )
+        on( barter.response, (client, {id, turn}) => {
+            // mark that weve recived this clients respons
+            responses.add( client )
+
+            // bind the move to the agent the client is acting for
+            moves.set( players.get(id), turn)
             
             // everyone has responded, were done here
-            if (moves.size == numSent) done(moves)
+            if (responses.size == numSent) done(moves)
         } )
     ]).length
 
@@ -214,7 +214,6 @@ const play = async () => {
 }
 
 // maps to keep track of all the users and outher stuff
-const clients = new Map()
 const effects = new Map()
 const players = new Map()
 const actions = new Map()
@@ -235,17 +234,7 @@ const emit = barter(server, on => [
     
     // a users asked us to spawn an player for them
     on("spawn", (client, reportId) => {
-        // if the client all ready has a player then remove that one first
-        if ( clients.has(client) ) removeClient(client)
         
-        // spawn us a new player
-        let player = spawnPlayer()
-
-        // bind the player to the client
-        clients.set(client, player)
-
-        // tell the client their id
-        reportId(player.id)
     })
 ])
 

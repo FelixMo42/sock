@@ -1,5 +1,6 @@
 const WebSocket = require("ws")
 const uuidv1 = require("uuid").v1
+const urlon = require("urlon")
 
 const response = "R"
 const question = "Q"
@@ -44,12 +45,12 @@ const barter = module.exports = (server, events) => {
         return JSON.parse(param)
     }
 
-    socket.on("connection", client => {
+    socket.on("connection", (client, request) => {
         let emit = (event, ...params) => client.send(`${question}\n${event}${params.map(stringify)}`)
 
         client[emiter] = emit
 
-        handle(barter.join, emit)
+        handle(barter.join, emit, urlon.parse(request.url.substr(2)))
 
         client.isAlive = true
 
