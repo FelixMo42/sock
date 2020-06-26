@@ -33,7 +33,7 @@ const drawPlayer = p5state(({x, y, id}) => {
     let player = players.get(id)
 
     // what percent health are we at?
-    let percent = player.hp / 100
+    let percent = player.hp / player.maxhp
 
     // draw a health bar
     stroke(139, 0, 0)
@@ -61,8 +61,8 @@ eventmonger.on(newPlayerEvent, player => {
 
     // is this me?
     if (player == getPlayer()) {
-        document.getElementById("hp").style.width = `${player.hp / 100 * 100}%`
-        document.getElementById("mp").style.width = `${player.mp / 100 * 100}%`
+        document.getElementById("hp").style.width = `${player.hp / player.maxhp * 100}%`
+        document.getElementById("mp").style.width = `${player.mp / player.maxmp * 100}%`
         document.getElementById("name").innerHTML = player.id
     }    
 } )

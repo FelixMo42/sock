@@ -42,7 +42,11 @@ const spawnPlayer = id => {
         position = { x: random(1, 5), y: random(1, 5) }
 
     // make the player
-    let player = { id, hp: 100, mp: 100, position }
+    let player = {
+        id, position,
+        hp: 100, maxhp: 100,
+        mp: 100, maxmp: 100
+    }
 
     // add the new player to the list of players
     players.set(player.id, player).write()
@@ -176,9 +180,9 @@ const tick = async () => {
     moves.forEach( applyAction )
 
     // look at the change in everyones hp
-    processEffect(HP, (hp, player) => {
-        // set are hp to the new hp
-        players.get(player).update("hp", addNumber(hp)).write()
+    processEffect(HP, (damage, player) => {
+        // take that damage, feel the pain (or get healed, I dont know)
+        players.get(player).update("hp", hp => Math.min(hp + damage, players.get(player).get("maxhp").value())).write()
 
         // were out of health, and therefore dead
         if (players.get(player).value().hp <= 0) removePlayer(player)
