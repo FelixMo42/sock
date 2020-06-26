@@ -212,7 +212,7 @@ const effects = new Map()
 
 // set up express app
 const app = express()
-app.use(express.static('client'))
+app.use(express.static('public'))
 
 // create the http server
 const server = http.createServer(app)

@@ -18,6 +18,7 @@ const div = (a, b) => Math.floor(a / b)
 // handle object events
 const drawObject = p5state(({x, y, width, height}) => {
     fill(51)
+    noStroke()
     rect(x * meter, y * meter, width * meter, height * meter)
 })
 eventmonger.on(newObjectEvent, object => addSprite(object, ({ ...object, draw: drawObject })) )
