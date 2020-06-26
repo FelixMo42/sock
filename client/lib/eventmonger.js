@@ -1,4 +1,4 @@
-const eventmonger = Object.freeze({
+export default Object.freeze({
     newEvent: () => new Set(),
     fire: (event, data) => event.forEach(callback => callback(data)),
     on: (event, callback) => event.add(callback),

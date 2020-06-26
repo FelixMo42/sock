@@ -1,4 +1,4 @@
-class Heap {
+export default class Heap {
     // the heap
     heap = []
     

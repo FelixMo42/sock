@@ -1,4 +1,4 @@
-class EventQueue {
+export default class EventQueue {
     list = []
 
     clear() {

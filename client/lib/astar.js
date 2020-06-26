@@ -1,8 +1,8 @@
 const MAX_SEARCH_SIZE = 100000
 
-const Vector = (x, y) => ({x, y})
+export const Vector = (x, y) => ({x, y})
 
-const pathfind = (() => {
+export const pathfind = (() => {
     const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
 
     const isWalkable = position => {
@@ -95,7 +95,7 @@ const pathfind = (() => {
     }
 })()
 
-const raycast = (() => {
+export const raycast = (() => {
     function *range(min, max) {
         let sign = Math.sign(max)
     

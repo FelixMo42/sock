@@ -14,7 +14,7 @@ const makeEventHandler = func => {
     }
 }
 
-const barter = (url, events, context) => {
+export default (url, events, context) => {
     const handle = makeEventHandler(events)
     const socket = new WebSocket(url, context)
     const answer = new Map()
@@ -38,9 +38,9 @@ const barter = (url, events, context) => {
         return JSON.parse(param)
     }
 
-    socket.onopen  = event => handle(barter.enter, [event])
-    socket.onclose = event => handle(barter.leave, [event])
-    socket.onerror = event => handle(barter.error, [event])
+    socket.onopen  = event => handle(enter, [event])
+    socket.onclose = event => handle(leave, [event])
+    socket.onerror = event => handle(error, [event])
 
     socket.onmessage = message => {
         let [type, event, ...params] = message.data.split("\n")
@@ -54,7 +54,7 @@ const barter = (url, events, context) => {
     return (event, ...params) => socket.send(`${question}\n${event}${params.map(stringify)}`)
 }
 
-barter.enter = Symbol("barter#enter")
-barter.leave = Symbol("barter#close")
-barter.error = Symbol("barter#error")
-barter.reply = Symbol("barter#reply")
+export const enter = Symbol("barter#enter")
+export const leave = Symbol("barter#close")
+export const error = Symbol("barter#error")
+export const reply = Symbol("barter#reply")
