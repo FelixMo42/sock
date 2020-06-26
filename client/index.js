@@ -101,9 +101,7 @@ function keyPressed() {
     // was a number key pressed?
     if (keyCode >= 49 && keyCode <= 57) {
         // get the numb pressed - 1
-        let num = keyCode - 49
-
-        
+        select(keyCode - 49)
     } 
 }
 
@@ -114,13 +112,21 @@ function mouseReleased() {
     // clear the previous path
     moves.clear()
 
+    let move = getSelectedMove()
+
+    // if we want to walk just pathfind to the selected point
+    if (move == "walk") return goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
+
     // is the shift key down?
     if ( keyIsDown(16) ) {
-        // attack a target
-        attack({ x: mouseTileX(), y: mouseTileY() })
-    } else {
-        // tell the player to where were pressing
+        // first go to the target
         goToPoint(getPlayer().position, { x: mouseTileX(), y: mouseTileY() })
+
+        // then strike
+        attack({ x: mouseTileX(), y: mouseTileY() }, move)
+    } else {
+        // just attack the enemy if they are in range
+        attack({ x: mouseTileX(), y: mouseTileY() }, move)
     }
 }
 
@@ -146,23 +152,20 @@ function draw() {
     moves.forEach(drawMove)
     vertex( drawMove(currentMove) )
     vertex( getPlayer().position.x * meter + center,  getPlayer().position.y * meter + center)
-    vertex(
-        sprites.get(getPlayer().id).x * meter + center, 
-        sprites.get(getPlayer().id).y * meter + center
-    )
+    vertex(sprites.get(getPlayer().id).x * meter + center, sprites.get(getPlayer().id).y * meter + center)
     endShape()
     pop()
-
-    // hightlight the tile with the mouse over it
-    noFill()
-    strokeWeight(4)
-    rect(mouseTileX() * meter + 5, mouseTileY() * meter + 5, meter - 10, meter - 10, 10)
 
     // tick all the animations
     animate()
 
     // draw all the sprites
     drawSprites()
+
+    // hightlight the tile with the mouse over it
+    noFill()
+    strokeWeight(4)
+    rect(mouseTileX() * meter + 5, mouseTileY() * meter + 5, meter - 10, meter - 10, 10)
 }
 
 /*///////////////////////*/
@@ -187,7 +190,7 @@ const mouseTileY = () => div(mouseY - getCameraPosition()[1], meter)
 /*| moves functions |*/
 /*///////////////////*/
 
-function attack(target) {
+function attack(target, type) {
     // get the player at the target position
     let player = getPlayerAtPosition(target)
 
@@ -195,7 +198,7 @@ function attack(target) {
     if ( !player ) return false
 
     // add this attack to our list of moves
-    moves.add({ type: "punch", target: player.id })
+    moves.add({ type, target: player.id })
 
     // return news of are success
     return true
@@ -206,23 +209,42 @@ function goToPoint(source, target) {
     pathfind(source, target).forEach(point => moves.add({type: "move", target: point}))
 }
 
+// what possible moves could we do
 const knowMoves = [
-    "move",
-    "punch",
-    "slice"
+    "walk",
+    "slice",
+    "shoot",
+    "heal"
 ]
 
-const movesBox = document.getElementById("moves")
-const selected = 0
+// the currently selected move
+let selected = 0
+
+// select a new move
+const select = num => {
+    if ( num < 0 || num >= knowMoves.length) return false
+
+    let movesBox = document.getElementById("moves")
+
+    movesBox.children.item(selected).className = ""
+    movesBox.children.item(num).className = "selected"
+
+    selected = num
+
+    return true
+}
+
+const getSelectedMove = () => knowMoves[selected]
+
 
 const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1)
 
-for (let i in knowMoves) {
+knowMoves.forEach((move, i) => {
     let el = document.createElement("p")
 
-    el.innerHTML = `${i}. ${capitalize(knowMoves[i])}`
+    el.innerHTML = `${i + 1}. ${capitalize(move)}`
 
     if (i == selected) el.className = "selected"
 
-    movesBox.appendChild( el )
-}
+    document.getElementById("moves").appendChild( el )
+})

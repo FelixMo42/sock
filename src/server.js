@@ -191,18 +191,8 @@ const tick = async () => {
         // if were not moving, then were done here 
         if ( position.x == target.x && position.y == target.y ) return false
 
-        // make sure that the target location is empty
-        if ( isEmptyPosition( target ) ) {
-            // if its empty move there
-            players.get(player)
-                   .set(`position.x`, target.x)
-                   .set(`position.y`, target.y)
-                   .write()
-        } else {
-            // if not then make are target position are current position
-            target.x = position.x
-            target.y = position.y    
-        }
+        // if the target location is empty move there
+        if ( isEmptyPosition( target ) ) players.get(player).set(`position`, target).write()
     })
 
     // tell the world news of the players changes

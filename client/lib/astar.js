@@ -35,13 +35,16 @@ const pathfind = (() => {
     const getNodeHash = ({x, y}) => `${x},${y}`
 
     const makePath = target => {
-        let path = []
+        // only add the final node if its walkable
+        let path = isWalkable(target.node) ? [target.node] : []
 
-        let node = target
+        let node = target.previous
 
         while ( "previous" in node ) {
+            // add this node to the start of the list
             path.unshift(node.node)
 
+            // and find the node leading to this one
             node = node.previous
         }
 
