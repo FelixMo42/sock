@@ -35,15 +35,17 @@ const removePlayerEvent = eventmonger.newEvent()
 
 const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
-// check if our player exist
-function hasPlayer() {
-    return players.has(name)
+const getPlayerAtPosition = (position) => {
+    for (let player of players.values()) {
+        if (player.position.x == position.x && player.position.y == position.y) return player
+    }
 }
 
+// check if our player exist
+const hasPlayer = () =>  players.has(name)
+
 // get the player their controlling
-function getPlayer() {
-    return players.get(name)
-}
+const getPlayer = () => players.get(name)
 
 // setup the callbacks in their own seperate blocks and then get the connection
 const emit = (() => {

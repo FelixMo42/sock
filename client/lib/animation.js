@@ -1,3 +1,9 @@
+const p5state = (func) => (...params) => {
+    push()
+    func(...params)
+    pop()
+}
+
 const getTime = () => (new Date()).getTime()
 
 const sprites = new Map()

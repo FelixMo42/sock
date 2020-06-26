@@ -62,10 +62,8 @@ const addClient = (client, {ids}) => {
     for (let outher of players.values()) client("playerJoin", outher)
 
     // make sure we have all the players the agent wants
-    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer( id )
+    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer(id)
 }
-
-const removeClient = client => {}
 
 const removePlayer = player => {
     // tell the gang that the player left
@@ -121,7 +119,7 @@ const applyAction = (action, source) => {
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
-    if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.value }, source)
+    if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.target }, source)
 
     // make sure the action exist
     if ( actions.has(action.type).value() ) {
@@ -229,7 +227,7 @@ const server = http.createServer(app)
 const emit = barter(server, on => [
     // deal with users leaving and joining
     on(barter.join, addClient),
-    on(barter.leave, removeClient)
+    on(barter.leave, () => {})
 ])
 
 // listen in on our fav port
