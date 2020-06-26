@@ -69,10 +69,10 @@ const removeClient = client => {}
 
 const removePlayer = player => {
     // tell the gang that the player left
-    emit("playerLeft", player.id)
+    emit("playerLeft", player)
 
     // remove the player from the list of players
-    players.delete(player.id)
+    players.unset(player).write()
 }
 
 const minTime = 500
@@ -117,31 +117,29 @@ const HP = Symbol("aspect#hp")
 const POSITION = Symbol("aspect#position")
 
 const applyAction = (action, source) => {
-    // is were being told to just chill for a turn
+    // were being told to just chill for a turn
     if ( action.type == "wait" ) return
 
     // if were moving then just dirently apply it
     if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.value }, source)
 
     // make sure the action exist
-    if ( actions.has(action.type) ) {
-        // get the player were targeting
-        let target = players.get(action.target)
-
+    if ( actions.has(action.type).value() ) {
         // we have no valid target, let bail
-        if ( target == undefined ) return console.error(`unknown target ${action.target}`)
+        if ( !players.has(action.target).value() ) return console.error(`unknown target ${action.target}`)
+
+        // get the player were targeting
+        let target = players.get(action.target).value()
 
         // make sure the target is out of range
-        if ( getDistance( source.position, target.position ) > actions.get(action.type).range ) return
+        if ( getDistance( players.get(source).value().position, target.position ) > actions.get(action.type).value().range ) return
 
         // apply the damage effect
-        applyEffect({ type: HP, value: -actions.get(action.type).value }, target)
+        applyEffect({ type: HP, value: actions.get(action.type).value().value }, action.target)
+    } else {
+        console.error(`unknown action ${action.type}`)
     }
-
-    console.error(`unknown action ${action.type}`)
 }
-
-const getEffect = aspect => effects.has(aspect) ? effects.get(aspect) : new Map()
 
 const setEffect = (aspect, target, callback) => {
     // we dont have the effects map of this aspect yet, lets add it
@@ -163,14 +161,6 @@ const applyEffect = (effect, target) => {
     if (effect.type == HP) setEffect(HP, target, addNumber(effect.value))
 }
 
-const filterEffect = (aspect, callback) => {
-    if ( !effects.has(aspect) ) return
-
-    let effect = effects.get(aspect)
-
-    for ( let [player] of effect ) if ( !callback(player, aspect) ) effect.delete( player )
-}
-
 const processEffect = (aspect, callback) => {
     if ( effects.has(aspect) ) effects.get(aspect).forEach(callback)
 }
@@ -188,29 +178,32 @@ const tick = async () => {
     moves.forEach( applyAction )
 
     // look at the change in everyones hp
-    processEffect(HP, (player, hp) => {
+    processEffect(HP, (hp, player) => {
         // set are hp to the new hp
-        player.hp = hp
+        players.get(player).update("hp", addNumber(hp)).write()
 
         // were out of health, and therefore dead
-        if (player.hp <= 0) removePlayer(player)
+        if (players.get(player).value().hp <= 0) removePlayer(player)
     })
 
     processEffect(POSITION, (target, player) => {
-        // if were not moving, then were done here 
-        if (
-            players.get(player).value().position.x == target.x &&
-            players.get(player).value().position.y == target.y
-        ) return false
+        // we need the players position a lot for this
+        const position = players.get(player).value().position
 
+        // if were not moving, then were done here 
+        if ( position.x == target.x && position.y == target.y ) return false
+
+        // make sure that the target location is empty
         if ( isEmptyPosition( target ) ) {
+            // if its empty move there
             players.get(player)
                    .set(`position.x`, target.x)
                    .set(`position.y`, target.y)
                    .write()
         } else {
-            target.x = player.position.x
-            target.y = player.position.y    
+            // if not then make are target position are current position
+            target.x = position.x
+            target.y = position.y    
         }
     })
 

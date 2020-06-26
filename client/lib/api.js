@@ -1,4 +1,21 @@
-const name = "Alice"
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i]
+        while (c.charAt(0) == ' ') c = c.substring(1)
+        if (c.indexOf(name) == 0) return c.substring(name.length, c.length)
+    }
+    return ""
+}
+
+let name =
+    new URLSearchParams(window.location.search).get("name") ||
+    getCookie("name")
+    uuidv1()
+
+document.cookie = `name=${name}`
 
 // keep track of object and players we know about
 const players = new Map()
@@ -18,26 +35,14 @@ const removePlayerEvent = eventmonger.newEvent()
 
 const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
-let ID = name
-
-// // spawn a new player
-// function spawnPlayer() {
-//     // ask the server to spawn us an player
-//     emit("spawn", on => [
-//         on(barter.reply, id => {
-//             ID = id
-//         })
-//     ])
-// }
-
 // check if our player exist
 function hasPlayer() {
-    return players.has(ID)
+    return players.has(name)
 }
 
 // get the player their controlling
 function getPlayer() {
-    return players.get(ID)
+    return players.get(name)
 }
 
 // setup the callbacks in their own seperate blocks and then get the connection
@@ -79,7 +84,7 @@ const emit = (() => {
         on("playerJoin", newPlayer),
         on("playerLeft", removePlayer),
         on("update", updatePlayer),
-        on("turn", callback => onTurn((turn) => callback({id: ID, turn})))
+        on("turn", callback => onTurn((turn) => callback({id: name, turn})))
     ])
 })()
 

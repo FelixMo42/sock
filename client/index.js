@@ -44,7 +44,7 @@ function keyPressed() {
 }
 
 function mouseReleased() {
-    // we dont have a player, we can do anything
+    // we dont have a player, we cant do anything
     if ( !hasPlayer() ) return
 
     // clear the previous path
@@ -117,11 +117,7 @@ function attack(target) {
     if ( !player ) return false
 
     // add this attack to our list of moves
-    moves.add({
-        type: 0,
-        value: 100,
-        target: player.id
-    })
+    moves.add({ type: "punch", target: player.id })
 
     // return news of are success
     return true
