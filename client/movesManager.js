@@ -1,5 +1,5 @@
 import EventQueue from './lib/eventqueue'
-import { on } from './lib/eventmonger'
+import { Event, fire, on } from './lib/eventmonger'
 import { pathfind } from './lib/path'
 import { keyUp, isNumeric, asNumber } from './lib/keyboard'
 import { mouseUp, mousePos } from './lib/mouse'
@@ -13,7 +13,6 @@ const moves = new EventQueue()
 let currentMove = { type: "wait" }
 onTurn(callback => moves.next(move => {
     currentMove = move
-    console.log(move)
     callback(move)
 }))
 
@@ -70,7 +69,7 @@ const mouseTile = () => ({
 /*////////////////////////*/
 
 // what possible moves could we do
-const knowMoves = [
+export const knowMoves = [
     "walk",
     "slice",
     "shoot",
@@ -80,15 +79,22 @@ const knowMoves = [
 // the currently selected move
 let selected = 0
 
+export const selectedNewMove = Event()
+
 // select a new move
 const select = num => {
 	// make sure the selected move is in range
     if ( num < 0 || num >= knowMoves.length) return false
 
-	// set the selected move
-	selected = num
+    // bail early if were reselecting the same move
+    if (selected == num) return true
 
-	// report news of are succese
+	// set the selected movez
+    selected = num
+
+    fire(selectedNewMove, getSelectedMove())
+
+	// report news of are successes
     return true
 }
 

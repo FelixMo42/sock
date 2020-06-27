@@ -1,7 +1,8 @@
 import { app, offset } from "./lib/graphics"
 import { on } from './lib/eventmonger'
 import * as PIXI from 'pixi.js'
-import { meter } from "./config"
+import { meter, drawTime } from "./config"
+import { ease } from 'pixi-ease'
 import {
 	newObjectEvent,
 	newPlayerEvent,
@@ -36,7 +37,13 @@ const removeSprite = source => {
 const getSprite = source => sprites.get(source.id)
 
 const toGlobal = n => n * meter
+const toCentered = n => n * meter + center
 const toGlobalCords = ({x, y}) => [x * meter, y * meter]
+
+const moveCameraToSprite = sprite => offset(
+	sprite.x - window.innerWidth / 2,
+	sprite.y - window.innerHeight / 2
+)
 
 /*////////////////*/
 /*| Draw Objects |*/
@@ -46,7 +53,7 @@ on(newObjectEvent, object => {
 	let sprite = new PIXI.Graphics()
 
 	sprite.beginFill(0x1e2021)
-	sprite.drawRect( ...toGlobalCords(object), toGlobal(object.width), toGlobal(object))
+	sprite.drawRect( ...toGlobalCords(object), toGlobal(object.width), toGlobal(object.height))
 	sprite.endFill()
 
 	addSprite(object, sprite)
@@ -67,15 +74,12 @@ on(newPlayerEvent, player => {
 	sprite.endFill()
 
 	// move the sprite to the right position
-	sprite.x = player.position.x * meter + center
-	sprite.y = player.position.y * meter + center
+	sprite.x = toCentered(player.position.x)
+	sprite.y = toCentered(player.position.y)
 
 	// if this is the player then focus on the camera on them
 	if ( player == getPlayer() ) {
-		offset(
-			player.position.x * meter - window.innerWidth / 2,
-			player.position.y * meter - window.innerHeight / 2
-		)
+		moveCameraToSprite(sprite)
 	} else {
 		// give the player a name tag
 		let text = new PIXI.Text( player.id, {
@@ -102,6 +106,17 @@ on(removePlayerEvent, player => removeSprite(player) )
 on(updatePlayerEvent, player => {
 	let sprite = getSprite(player)
 	
+	let anim = ease.add(sprite, {
+		x: toCentered(player.position.x),
+		y: toCentered(player.position.y)
+	}, {
+		duration: drawTime,
+		ease: "linear"
+	})
+	
+	if ( player == getPlayer() ) {
+		anim.on("each", () => moveCameraToSprite(sprite) )
+	}
 } )
 
 /*//////////////*/

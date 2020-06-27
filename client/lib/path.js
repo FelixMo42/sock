@@ -42,6 +42,9 @@ const makePath = target => {
 
     let node = target.previous
 
+    // check if were allready at the target location
+    if (!node) return path
+
     while ( "previous" in node ) {
         // add this node to the start of the list
         path.unshift(node.node)
