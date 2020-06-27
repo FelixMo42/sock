@@ -3,8 +3,10 @@
 import Grapics, { app } from "./grapics.svelte"
 import * as PIXI from 'pixi.js'
 import EventQueue from './lib/eventqueue'
-import eventmonger from './lib/eventmonger'
+import { on } from './lib/eventmonger'
+import { keyUp } from './userinput'
 import { pathfind } from './lib/astar'
+import { isNumeric, asNumber } from './keys'
 import {
 	newObjectEvent,
 	newPlayerEvent,
@@ -14,43 +16,39 @@ import {
 	onTurn
 } from "./lib/api"
 
-/*/////////////////////////////////*/
-/*| utility functions + variables |*/
-/*/////////////////////////////////*/
-
-const moves = new EventQueue()
+/*///////////////////////////////*/
+/*| handle callbacks + graphics |*/
+/*///////////////////////////////*/
 
 const meter = 60
 const center = meter / 2
+const sprites = new Map()
 
-const clamp = (min, max) => value => Math.max(Math.min(value, max), min)
-const div = (a, b) => Math.floor(a / b)
-
-/*////////////////////*/
-/*| handle callbacks |*/
-/*////////////////////*/
-
-eventmonger.on(newObjectEvent, object => {
+on(newObjectEvent, object => {
 	let sprite = new PIXI.Graphics()
 
 	sprite.beginFill(0x515151)
 	sprite.drawRect(object.x * meter, object.y * meter, object.width * meter, object.height * meter)
 	sprite.endFill()
 
+	sprites.set(object, sprite)
 	app.stage.addChild(sprite)
 } )
-eventmonger.on(newPlayerEvent, player => {
+on(newPlayerEvent, player => {
 	let sprite = new PIXI.Graphics()
 
 	sprite.beginFill(0x515151)
 	sprite.drawCircle(player.x * meter + center, player.t * meter + center, 20)
 	sprite.endFill()
 
+	sprites.set(player, sprite)
 	app.stage.addChild(sprite)
 } )
 
-eventmonger.on(removePlayerEvent, player => {} )
-eventmonger.on(updatePlayerEvent, player => {} )
+on(removePlayerEvent, player => app.stage.removeChild( sprites.get(player) ) )
+on(updatePlayerEvent, player => {
+
+} )
 
 let currentMove = { type: "wait" }
 onTurn(callback => moves.next(move => {
@@ -58,9 +56,19 @@ onTurn(callback => moves.next(move => {
     callback(move)
 }))
 
+/*/////////////////////*/
+/*| handle user input |*/
+/*/////////////////////*/
+
+on(keyUp, key => {
+	if ( isNumeric(key) ) select(asNumber(key) - 1)
+})
+
 /*///////////////////*/
 /*| moves functions |*/
 /*///////////////////*/
+
+const moves = new EventQueue()
 
 function attack(target, type) {
     // get the player at the target position
@@ -107,6 +115,7 @@ const getSelectedMove = () => knowMoves[selected]
 
 <main>
 	<div id="game"><Grapics/></div>
+	<p>{ selected }</p>
 </main>
 
 <style>
@@ -116,5 +125,9 @@ const getSelectedMove = () => knowMoves[selected]
 		overflow: hidden;
 		position: absolute;
 		z-index: -100;
+	}
+	
+	p {
+		color: white
 	}
 </style>

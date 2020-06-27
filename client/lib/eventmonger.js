@@ -1,6 +1,4 @@
-export default Object.freeze({
-    newEvent: () => new Set(),
-    fire: (event, data) => event.forEach(callback => callback(data)),
-    on: (event, callback) => event.add(callback),
-    off: (callback) => event.delete(callback)
-})
+export const Event = () => new Set()
+export const fire = (event, data) => event.forEach(callback => callback(data))
+export const on = (event, callback) => event.add(callback)
+export const off = (callback) => event.delete(callback)

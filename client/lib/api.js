@@ -1,5 +1,5 @@
 import { v1 as uuidv1 } from "uuid"
-import eventmonger from "./eventmonger"
+import { Event, fire, on } from "./eventmonger"
 import barter, * as socketEvent from "./barter"
 
 /*/////////////////////*/
@@ -35,16 +35,16 @@ export const players = new Map()
 export const objects = new Map()
 
 // server events
-export const connectEvent = eventmonger.newEvent()
-export const disconnectEvent = eventmonger.newEvent()
+export const connectEvent = Event()
+export const disconnectEvent = Event()
 
 // object events
-export const newObjectEvent = eventmonger.newEvent()
+export const newObjectEvent = Event()
 
 // player events
-export const newPlayerEvent    = eventmonger.newEvent()
-export const updatePlayerEvent = eventmonger.newEvent()
-export const removePlayerEvent = eventmonger.newEvent()
+export const newPlayerEvent    = Event()
+export const updatePlayerEvent = Event()
+export const removePlayerEvent = Event()
 
 /*///////////////////////*/
 /*| backend setup stuff |*/
@@ -78,7 +78,7 @@ const emit = (() => {
     function newObject(object) {
         objects.set(object.id, object)
     
-        eventmonger.fire(newObjectEvent, object)
+        fire(newObjectEvent, object)
     }
 
     // player callbacks
@@ -87,25 +87,25 @@ const emit = (() => {
         
         players.set(player.id, player)
 
-        eventmonger.fire(newPlayerEvent, player)
+        fire(newPlayerEvent, player)
     }
 
     function updatePlayer(player) {
         players.set(player.id, player)
 
-        eventmonger.fire(updatePlayerEvent, player)
+        fire(updatePlayerEvent, player)
     }
 
     function removePlayer(id) {
-        eventmonger.fire(removePlayerEvent, players.get(id))
+        fire(removePlayerEvent, players.get(id))
 
         players.delete(id)
     }
 
     // connect to the server and register the callbacks and return the connection
     return barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
-        on(socketEvent.enter, () => eventmonger.fire(connectEvent)),
-        on(socketEvent.leave, () => eventmonger.fire(disconnectEvent)),
+        on(socketEvent.enter, () => fire(connectEvent)),
+        on(socketEvent.leave, () => fire(disconnectEvent)),
         on("newObject", newObject),
         on("playerJoin", newPlayer),
         on("playerLeft", removePlayer),
@@ -115,4 +115,4 @@ const emit = (() => {
 })()
 
 // log that the server disconnected
-eventmonger.on( disconnectEvent, () => console.log("server closed") )
+on( disconnectEvent, () => console.log("server closed") )
