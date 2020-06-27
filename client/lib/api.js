@@ -40,6 +40,7 @@ export const disconnectEvent = Event()
 
 // object events
 export const newObjectEvent = Event()
+export const removeObjectEvent = Event()
 
 // player events
 export const newPlayerEvent    = Event()

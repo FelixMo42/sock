@@ -1,3 +1,30 @@
+import { Event, fire } from "./eventmonger"
+
+// list of which keys are down
+const keysDown = new Set()
+
+// keyboard events
+export const keyDown = Event()
+export const keyUp   = Event()
+
+window.addEventListener("keydown", event => {
+    keysDown.add(event.keyCode)
+
+    fire(keyDown, event.keyCode)
+})
+
+window.addEventListener("keyup", event => {
+    keysDown.delete(event.keyCode)
+
+    fire(keyUp, event.keyCode)
+})
+
+export const isDown = (key) => keysDown.has(key)
+
+export const isNumeric = keyCode => keyCode >= 48 && keyCode <= 57
+
+export const asNumber  = keyCode => isNumeric(keyCode) ? keyCode - 48 : -1
+
 export const BACKSPACE = 8
 export const TAB = 9
 export const ENTER = 13
@@ -96,6 +123,3 @@ export const OPEN_BRACKET = 219
 export const BACK_SLASH = 220
 export const CLOSE_BRACKET = 221
 export const SINGLE_QUOTE = 222
-
-export const isNumeric = keyCode => keyCode >= 48 && keyCode <= 57
-export const asNumber  = keyCode => isNumeric(keyCode) ? keyCode - 48 : -1
