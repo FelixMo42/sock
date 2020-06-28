@@ -29,6 +29,4 @@ export const clear = () => {
 
 export const generate = () => {
     clear()
-
-
 }

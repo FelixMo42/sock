@@ -50,18 +50,16 @@ export default (server, events) => {
 
         client[emiter] = emit
 
-        handle(join, emit, urlon.parse(request.url.substr(2)))
+        handle(enter, emit, urlon.parse(request.url.substr(2)))
 
         client.isAlive = true
 
         client.on("message", message => {
             let [type, event, ...params] = message.split("\n")
 
-            if (type == response)
-                return answer.get(event)(reply, emit, ...params.map(parse(client)))
+            if (type == response) return answer.get(event)(reply, emit, ...params.map(parse(client)))
 
-            if (type == question)
-                return handle(event, emit, ...params.map(parse(client)))
+            if (type == question) return handle(event, emit, ...params.map(parse(client)))
 
             // lets no error or any thing, just log it
             console.error(`invalide type ${type}`)
@@ -121,6 +119,6 @@ export default (server, events) => {
     return emit
 }
 
-export const join = Symbol("barter#join")
+export const enter = Symbol("barter#enter")
 export const leave = Symbol("barter#leave")
 export const reply = Symbol("barter#reply")

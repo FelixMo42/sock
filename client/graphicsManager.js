@@ -1,5 +1,5 @@
 import { app, offset } from "./lib/graphics"
-import { on } from './lib/eventmonger'
+import { on } from 'eventmonger'
 import * as PIXI from 'pixi.js'
 import { meter, drawTime } from "./config"
 import { ease } from 'pixi-ease'

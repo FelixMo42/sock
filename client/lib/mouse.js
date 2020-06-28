@@ -1,4 +1,4 @@
-import { Event, fire } from './eventmonger'
+import { Event, fire } from 'eventmonger'
 import { app } from './graphics'
 
 export const mousePos = { x: 0, y: 0 }

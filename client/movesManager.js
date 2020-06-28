@@ -1,5 +1,5 @@
 import EventQueue from './lib/eventqueue'
-import { Event, fire, on } from './lib/eventmonger'
+import { Event, fire, on } from 'eventmonger'
 import { pathfind } from './lib/path'
 import { keyUp, isNumeric, asNumber } from './lib/keyboard'
 import { mouseUp, mousePos } from './lib/mouse'

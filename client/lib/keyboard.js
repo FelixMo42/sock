@@ -1,4 +1,4 @@
-import { Event, fire } from "./eventmonger"
+import { Event, fire } from "eventmonger"
 
 // list of which keys are down
 const keysDown = new Set()

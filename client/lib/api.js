@@ -1,5 +1,5 @@
 import { v1 as uuidv1 } from "uuid"
-import { Event, fire, on } from "./eventmonger"
+import { Event, fire, on } from "eventmonger"
 import barter, * as socketEvent from "./barter"
 
 /*/////////////////////*/
