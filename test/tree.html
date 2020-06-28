@@ -1,0 +1,77 @@
+<body>
+    <div id="body"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.0/pixi.min.js"></script>
+
+    <script>
+        const width = 500
+        const height = 500
+
+        const PI = 3.14159
+        const app = new PIXI.Application({width, height})
+        document.getElementById("body").appendChild(app.view)
+
+        // set the backgroud color
+        app.renderer.backgroundColor = 0x425421
+
+        let tree = new PIXI.Graphics()
+
+        tree.filters = [ new PIXI.filters.FXAAFilter() ]
+        tree.lineStyle(3, 0x000000, 1.0)
+
+        function interpolate(p, n1, n2) {
+            return n1 + (n2 - n1) * p
+        }
+
+        const range = (min, max) => () => Math.random() * (max - min) + min
+
+        function drawLeafArc(graphics, x, y, r, size, start=0, end=2 * PI) {
+            graphics.moveTo(
+                x + Math.cos(start) * r,
+                y + Math.sin(start) * r
+            )
+
+            let step = size / r
+            let half = step / 2
+
+            for (let a = start + step; a < end + step; a += step) {
+                graphics.bezierCurveTo(
+                    x + Math.cos(a - half - Math.random() * half) * (r + 10 + 10 * Math.random()),
+                    y + Math.sin(a - half - Math.random() * half) * (r + 10 + 10 * Math.random()),
+
+                    x + Math.cos(a - half + Math.random() * half) * (r + 10 + 10 * Math.random()),
+                    y + Math.sin(a - half + Math.random() * half) * (r + 10 + 10 * Math.random()),
+
+                    x + Math.cos(a) * r,
+                    y + Math.sin(a) * r
+                )
+            }
+        }
+
+        function drawTree(grap, x, y, radius) {
+            let leafsize = 30
+
+            tree.beginFill(0xD4E891)
+            drawLeafArc(grap, x, y, radius, leafsize)
+            tree.endFill(0xD4E891)
+
+            let stepsize = range(15, 20)
+
+            for (let r = radius - stepsize(); r > 0; r -= stepsize() ) {
+                let start = Math.random() * 2 * PI
+                let end   = start + Math.random() * 2 * PI
+
+                drawLeafArc(tree, x, y, r, leafsize, start, end )
+            }
+        }
+
+        let x = range(0, 2560)
+        let y = range(0, 1600)
+        let size = range(50, 100)
+        for (let i = 0; i < 10000; i++) {
+            drawTree(tree, x(), y(), size())
+        }
+
+        app.stage.addChild(tree) 
+    </script>
+</body>
