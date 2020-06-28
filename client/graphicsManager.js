@@ -6,7 +6,7 @@ import { ease } from 'pixi-ease'
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-	getPlayer, isOurPlayer
+	isOurPlayer
 } from "./lib/api"
 
 // set the backgroud color
@@ -34,8 +34,8 @@ const removeSprite = source => {
 const getSprite = source => sprites.get(source.id)
 
 const toGlobal = n => n * meter
-const toCentered = n => n * meter + center
 const toGlobalCords = ({x, y}) => [x * meter, y * meter]
+const toCentered = n => n * meter + center
 
 const moveCameraToSprite = sprite => offset(
 	sprite.x - window.innerWidth / 2,
@@ -49,9 +49,20 @@ const moveCameraToSprite = sprite => offset(
 on(createObjectEvent, object => {
 	let sprite = new PIXI.Graphics()
 
-	sprite.beginFill(0x1e2021)
-	sprite.drawRect( ...toGlobalCords(object), toGlobal(object.width), toGlobal(object.height))
-	sprite.endFill()
+	if ( object.name == "wall" ) {
+		sprite.beginFill(0x1e2021)
+		sprite.drawRect( ...toGlobalCords(object), toGlobal(object.width), toGlobal(object.height))
+		sprite.endFill()
+	}
+
+	if ( object.name == "tree" ) {
+		sprite.beginFill(0x302621)
+		sprite.drawCircle(0, 0, 25)
+		sprite.endFill()
+
+		sprite.x = toCentered(object.x)
+		sprite.y = toCentered(object.y)
+	}
 
 	addSprite(object, sprite)
 } )

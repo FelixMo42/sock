@@ -1,9 +1,9 @@
 import express from "express"
-import http from "http"
+import { createServer } from "http"
 import barter, { enter, leave, reply } from "./barter.js"
 import { players, actions, objects } from "./database.js"
 import { fire, on } from "eventmonger"
-import { isEmptyPosition, wait, getDistance, addVector, addNumber } from "./util.js"
+import { isEmptyPosition, wait, getDistance, addVector, addNumber, random } from "./util.js"
 import {
     createPlayer, removePlayer,
     createPlayerEvent, updatePlayerEvent, removePlayerEvent,
@@ -198,7 +198,7 @@ const app = express()
 app.use(express.static('public'))
 
 // create the http server
-const server = http.createServer(app)
+const server = createServer(app)
 
 // create the websocket server
 const emit = barter(server, on => [

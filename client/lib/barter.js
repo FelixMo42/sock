@@ -35,7 +35,13 @@ export default (url, events, context) => {
         if (param[0] == "#")
             return (...params) => socket.send(`${response}\n${param}${params.map(stringify)}`)
 
-        return JSON.parse(param)
+        try {
+            return JSON.parse(param)
+        } catch (SyntaxError) {
+            console.log(param)
+
+            return {}
+        }
     }
 
     socket.onopen  = event => handle(enter, [event])

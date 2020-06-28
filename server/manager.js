@@ -1,3 +1,4 @@
+import uuid from "uuid"
 import { Event, fire } from "eventmonger"
 import { players, objects } from "./database.js"
 
@@ -16,6 +17,7 @@ export const removePlayerEvent = Event()
 export const createPlayer = config => {
     let player = {
         // set the defaults
+        id: uuid.v1(),
         position: {x: 0, y: 0},
         hp: 100, maxhp: 100,
         mp: 100, maxmp: 100,
@@ -25,7 +27,7 @@ export const createPlayer = config => {
     }
 
     // write the player into the database
-    players.set(player.id, player)
+    players.set(player.id, player).write()
 
     // tell the world the news of the new player
     fire(createPlayerEvent, player)
@@ -48,6 +50,7 @@ export const removePlayer = player => {
 export const createObject = config => {
     let object = {
         // set the defaults
+        id: uuid.v1(),
         x: 0, y: 0,
         width: 1,
         height: 1,
@@ -57,7 +60,7 @@ export const createObject = config => {
     }
 
     // write the object into the database
-    objects.set(object.id, object)
+    objects.set(object.id, object).write()
 
     // tell the world the news of the new player
     fire(createObjectEvent, object)
