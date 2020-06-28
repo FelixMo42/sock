@@ -1,6 +1,6 @@
-const WebSocket = require("ws")
-const uuidv1 = require("uuid").v1
-const urlon = require("urlon")
+import ws from "ws"
+import uuid from "uuid"
+import urlon from "urlon"
 
 const response = "R"
 const question = "Q"
@@ -21,14 +21,14 @@ const makeEventHandler = func => {
     }
 }
 
-const barter = module.exports = (server, events) => {
-    const socket = new WebSocket.Server({server})
+export default (server, events) => {
+    const socket = new ws.Server({server})
     const handle = makeEventHandler(events)
     const answer = new Map()
 
     const stringify = param => {
         if (typeof param === "function") {
-            let id = "#" + uuidv1()
+            let id = "#" + uuid.v1()
 
             answer.set(id, makeEventHandler(param))
 
@@ -50,7 +50,7 @@ const barter = module.exports = (server, events) => {
 
         client[emiter] = emit
 
-        handle(barter.join, emit, urlon.parse(request.url.substr(2)))
+        handle(join, emit, urlon.parse(request.url.substr(2)))
 
         client.isAlive = true
 
@@ -58,7 +58,7 @@ const barter = module.exports = (server, events) => {
             let [type, event, ...params] = message.split("\n")
 
             if (type == response)
-                return answer.get(event)(barter.response, emit, ...params.map(parse(client)))
+                return answer.get(event)(reply, emit, ...params.map(parse(client)))
 
             if (type == question)
                 return handle(event, emit, ...params.map(parse(client)))
@@ -69,14 +69,14 @@ const barter = module.exports = (server, events) => {
 
         client.on("close", () => {
             // handle it closing
-            handle(barter.leave, emit)
+            handle(leave, emit)
         
             // tell all callbacks that is closed
-            answer.forEach(handle => handle(barter.leave, emit))
+            answer.forEach(handle => handle(leave, emit))
         })
 
         client.on("pong", () => {
-            isAlive = true
+            client.isAlive = true
         })
     })
 
@@ -85,7 +85,7 @@ const barter = module.exports = (server, events) => {
 
     setInterval(() => {
         socket.clients.forEach(client => {
-            if (client.readyState == WebSocket.OPEN) {
+            if (client.readyState == ws.OPEN) {
                 if (client.isAlive == false) return client.terminate()
 
                 client.isAlive = true
@@ -97,7 +97,7 @@ const barter = module.exports = (server, events) => {
     const emit = (event, ...params) => {
         let message = `${question}\n${event}${params.map(stringify)}`
 
-        let clients = Array.from(socket.clients.values()).filter(client => client.readyState == WebSocket.OPEN)
+        let clients = Array.from(socket.clients.values()).filter(client => client.readyState == ws.OPEN)
 
         clients.forEach(client => client.send(message))
 
@@ -109,7 +109,7 @@ const barter = module.exports = (server, events) => {
         let message = `${question}\n${event}${params.map(stringify)}`
 
         let clients = Array.from(socket.clients.values())
-            .filter(client => client.readyState == WebSocket.OPEN)
+            .filter(client => client.readyState == ws.OPEN)
             .filter(client => func(client[emiter]))
 
         clients.forEach(client => client.send(message))
@@ -121,6 +121,6 @@ const barter = module.exports = (server, events) => {
     return emit
 }
 
-barter.join = Symbol("barter#join")
-barter.leave = Symbol("barter#leave")
-barter.response = Symbol("barter#response")
+export const join = Symbol("barter#join")
+export const leave = Symbol("barter#leave")
+export const reply = Symbol("barter#reply")

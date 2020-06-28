@@ -5,19 +5,23 @@
     "keywords": [],
     "author": "FelixMo42",
     "license": "ISC",
+    "type": "module",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node server/server.js",
         "build": "rollup -c",
+
         "dev": "rollup -c --watch",
-        "dev:server": "nodemon src/server.js"
+        "dev:server": "nodemon src/server.js",
+
+        "cli": "node server/cli.js"
     },
     "nodemonConfig": {
         "watch": "server/"
     },
     "dependencies": {
+        "commander": "^5.1.0",
         "express": "^4.17.1",
-        "fs-extra": "^9.0.1",
         "lowdb": "^1.0.0",
         "pixi-ease": "^3.0.4",
         "pixi.js": "^5.3.0",

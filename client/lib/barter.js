@@ -45,7 +45,7 @@ export default (url, events, context) => {
     socket.onmessage = message => {
         let [type, event, ...params] = message.data.split("\n")
 
-        if (type == response) return answer.get(event)(barter.reply, params.map(parse))
+        if (type == response) return answer.get(event)(reply, params.map(parse))
         if (type == question) return handle(event, params.map(parse))
 
         console.error(`invalide type ${type}`)

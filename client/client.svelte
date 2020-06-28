@@ -82,7 +82,6 @@
 		margin: 5px;
 		padding-left: 5px;
 		background-color: rgba(255,255,255,0.5);
-
 		transition: background-color 0.25s ease;
 	}
 

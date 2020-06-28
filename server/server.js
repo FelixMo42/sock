@@ -1,16 +1,7 @@
-const express = require("express")
-const barter = require("./barter")
-const uuid = require("uuid").v1
-const http = require("http")
-const fs = require("fs-extra")
-const low = require('lowdb')
-const FileSync = require('lowdb/adapters/FileSync')
-
-// set up the databases
-const loadJsonDB = (file) =>  low(new FileSync(file))
-const players = loadJsonDB("./data/players.json")
-const actions = loadJsonDB("./data/actions.json")
-const objects = loadJsonDB("./data/objects.json")
+import express from "express"
+import http from "http"
+import barter, { join, leave, reply } from "./barter.js"
+import { players, actions, objects } from "./database.js"
 
 const wait = ms => new Promise(done => setTimeout(done, ms))
 
@@ -85,7 +76,7 @@ const getPlayersMoves = () => new Promise(done => {
     let moves     = new Map()
 
     let numSent = emit("turn", on => [
-        on( barter.leave, client => {
+        on( leave, client => {
             // remove are record of this client responding
             responses.delete(client)
 
@@ -98,7 +89,7 @@ const getPlayersMoves = () => new Promise(done => {
             if (numSent == 0) done(moves)
         } ),
 
-        on( barter.response, (client, {id, turn}) => {
+        on( reply, (client, {id, turn}) => {
             // mark that weve recived this clients respons
             responses.add( client )
 
@@ -220,8 +211,8 @@ const server = http.createServer(app)
 // create the websocket server
 const emit = barter(server, on => [
     // deal with users leaving and joining
-    on(barter.join, addClient),
-    on(barter.leave, () => {})
+    on(join, addClient),
+    on(leave, () => {})
 ])
 
 // listen in on our fav port
