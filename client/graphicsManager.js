@@ -73,6 +73,9 @@ on(newPlayerEvent, player => {
 	sprite.drawCircle(0, 0, 20)
 	sprite.endFill()
 
+	// keep track of some stuff about the player so we can see if it changes
+	sprite.hp = player.hp
+
 	// move the sprite to the right position
 	sprite.x = toCentered(player.position.x)
 	sprite.y = toCentered(player.position.y)
@@ -106,6 +109,7 @@ on(removePlayerEvent, player => removeSprite(player) )
 on(updatePlayerEvent, player => {
 	let sprite = getSprite(player)
 	
+	// slide that player into its new position
 	let anim = ease.add(sprite, {
 		x: toCentered(player.position.x),
 		y: toCentered(player.position.y)
@@ -113,7 +117,41 @@ on(updatePlayerEvent, player => {
 		duration: drawTime,
 		ease: "linear"
 	})
+
+	if ( sprite.hp != player.hp ) {
+		//  make a colored tag showing how the players health has changed
+		let text = new PIXI.Text(player.hp - sprite.hp, {
+			fontFamily: 'Arial',
+			fontSize: 18,
+			fill: (player.hp - sprite.hp < 0)? 0xff0000 : 0x4ee44e
+		})
+
+		// center the text
+		text.anchor.x = 0.5
+
+		// position the text on top of the player
+		text.x = sprite.x
+		text.y = sprite.y - 20
+
+		// save the new hp
+		sprite.hp = player.hp
+
+		// make the text slide up
+		let anim = ease.add(text, {
+			x: text.x,
+			y: text.y - 60
+		}, {
+			duration: 750
+		})
+
+		// make the text visable
+		app.stage.addChild(text)
+
+		// remove the text when the animation is complete
+		anim.on("complete", () => app.stage.removeChild(text))
+	}
 	
+	// if this is the main player we need to move the camera so it fallows them
 	if ( player == getPlayer() ) {
 		anim.on("each", () => moveCameraToSprite(sprite) )
 	}

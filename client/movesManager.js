@@ -34,6 +34,9 @@ on(mouseUp, button => {
     
     // if were trying to move then do that
     if ( move == "walk" ) goToPoint( mouseTile() )
+
+    // outher wise attack!
+    else attack( mouseTile(), move )
 })
 
 /*/////////////////////*/
