@@ -2,10 +2,13 @@ import express from "express"
 import http from "http"
 import barter, { enter, leave, reply } from "./barter.js"
 import { players, actions, objects } from "./database.js"
+import { fire, on } from "eventmonger"
+import { isEmptyPosition, wait, getDistance, addVector, addNumber } from "./util.js"
 import {
-    wait, getDistance,
-    addVector, addNumber
-} from "./util.js"
+    createPlayer, removePlayer,
+    createPlayerEvent, updatePlayerEvent, removePlayerEvent,
+    createObjectEvent, updateObjectEvent, removeObjectEvent
+} from "./manager.js"
 
 // the min and max time for how long player have to select moves
 const minTime = 500
@@ -19,23 +22,23 @@ const POSITION = Symbol("aspect#position")
 /*| misc |*/
 /*////////*/
 
+on(createPlayerEvent, player => emit("createPlayerEvent", players.get(player).value()))
+on(updatePlayerEvent, player => emit("updatePlayerEvent", players.get(player).value()))
+on(removePlayerEvent, player => emit("removePlayerEvent", player))
+
+on(createObjectEvent, object => emit("createObjectEvent", objects.get(object).value()))
+on(updateObjectEvent, object => emit("updateObjectEvent", objects.get(object).value()))
+on(removeObjectEvent, object => emit("removeObjectEvent", object))
+
 const addClient = (client, {ids}) => {
     // tell the new client of all the objects in the world
-    for (let object of objects.values()) client("newObject", object)
+    for (let object of objects.values()) client("createObjectEvent", object)
 
     // tell the new client of all the players in the server
-    for (let outher of players.values()) client("playerJoin", outher)
+    for (let player of players.values()) client("createPlayerEvent", player)
 
     // make sure we have all the players the agent wants
     for (let id of ids) if ( !players.has(id).value() ) spawnPlayer(id)
-}
-
-const removePlayer = player => {
-    // tell the gang that the player left
-    emit("playerLeft", player)
-
-    // remove the player from the list of players
-    players.unset(player).write()
 }
 
 const getPlayersActions = () => new Promise(done => {
@@ -104,20 +107,11 @@ const spawnPlayer = id => {
         position = { x: random(1, 5), y: random(1, 5) }
 
     // make the player
-    let player = {
+    return createPlayer({
         id, position,
         hp: 100, maxhp: 100,
         mp: 100, maxmp: 100
-    }
-
-    // add the new player to the list of players
-    players.set(player.id, player).write()
-
-    // tell all the cients that a new player has connected
-    emit("playerJoin", player)
-
-    // return the new player
-    return player
+    })
 }
 
 /*////////////////////*/
@@ -188,7 +182,7 @@ const tick = async () => {
     })
 
     // tell the world news of the players changes
-    for (let player of players.values()) emit("update", player)
+    for (let player of players.keys()) fire(updatePlayerEvent, player)
 }
 
 const play = async () => {

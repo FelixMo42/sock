@@ -4,12 +4,9 @@ import * as PIXI from 'pixi.js'
 import { meter, drawTime } from "./config"
 import { ease } from 'pixi-ease'
 import {
-	newObjectEvent,
-	newPlayerEvent,
-    removePlayerEvent,
-    removeObjectEvent,
-	updatePlayerEvent,
-	getPlayer
+	createObjectEvent, removeObjectEvent,
+	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
+	getPlayer, isOurPlayer
 } from "./lib/api"
 
 // set the backgroud color
@@ -49,7 +46,7 @@ const moveCameraToSprite = sprite => offset(
 /*| Draw Objects |*/
 /*////////////////*/
 
-on(newObjectEvent, object => {
+on(createObjectEvent, object => {
 	let sprite = new PIXI.Graphics()
 
 	sprite.beginFill(0x1e2021)
@@ -65,7 +62,7 @@ on(removeObjectEvent, object => removeSprite(object) )
 /*| Draw Players |*/
 /*////////////////*/
 
-on(newPlayerEvent, player => {
+on(createPlayerEvent, player => {
 	let sprite = new PIXI.Graphics()
 
 	// draw a circle
@@ -81,7 +78,7 @@ on(newPlayerEvent, player => {
 	sprite.y = toCentered(player.position.y)
 
 	// if this is the player then focus on the camera on them
-	if ( player == getPlayer() ) {
+	if ( isOurPlayer(player) ) {
 		moveCameraToSprite(sprite)
 	} else {
 		// give the player a name tag
@@ -103,8 +100,6 @@ on(newPlayerEvent, player => {
 
 	addSprite(player, sprite)
 } )
-
-on(removePlayerEvent, player => removeSprite(player) )
 
 on(updatePlayerEvent, player => {
 	let sprite = getSprite(player)
@@ -152,10 +147,10 @@ on(updatePlayerEvent, player => {
 	}
 	
 	// if this is the main player we need to move the camera so it fallows them
-	if ( player == getPlayer() ) {
-		anim.on("each", () => moveCameraToSprite(sprite) )
-	}
+	if ( isOurPlayer(player) ) anim.on("each", () => moveCameraToSprite(sprite) )
 } )
+
+on(removePlayerEvent, player => removeSprite(player) )
 
 /*//////////////*/
 /*| Draw Moves |*/

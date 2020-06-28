@@ -1,6 +1,6 @@
 import { v1 as uuidv1 } from "uuid"
 import { Event, fire, on } from "eventmonger"
-import barter, * as socketEvent from "./barter"
+import barter, { enter, leave } from "./barter"
 
 /*/////////////////////*/
 /*| utility functions |*/
@@ -17,8 +17,11 @@ export const getPlayerAtPosition = (position) => {
 // check if our player exist
 export const hasPlayer = () =>  players.has(name)
 
-// get the player their controlling
+// get our player
 export const getPlayer = () => players.get(name)
+
+// cheack if this is out player
+export const isOurPlayer = player => player == getPlayer()
 
 // define the callback for what you do on your turn
 let onTurnCallback = () => {}
@@ -35,15 +38,16 @@ export const players = new Map()
 export const objects = new Map()
 
 // server events
-export const connectEvent = Event()
-export const disconnectEvent = Event()
+export const enterServerEvent = Event()
+export const leaveServerEvent = Event()
 
 // object events
-export const newObjectEvent = Event()
+export const createObjectEvent = Event()
+export const updateObjectEvent = Event()
 export const removeObjectEvent = Event()
 
 // player events
-export const newPlayerEvent    = Event()
+export const createPlayerEvent = Event()
 export const updatePlayerEvent = Event()
 export const removePlayerEvent = Event()
 
@@ -71,49 +75,43 @@ export const name =
 
 document.cookie = `name=${name}`
 
+// connect to the server and register the callbacks and return the connection
+export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
+    //server callbacks
+    on(enter, () => fire(enterServerEvent)),
+    on(leave, () => fire(leaveServerEvent)),
 
-// setup the callbacks in their own seperate blocks and then get the connection
-const emit = (() => {
     // object callbacks
-
-    function newObject(object) {
+    on("createObjectEvent", object => {
         objects.set(object.id, object)
-    
-        fire(newObjectEvent, object)
-    }
+        fire(createObjectEvent, object)
+    }),
+    on("updateObjectEvent", object => {
+        objects.set(object.id, object)
+        fire(updateObjectEvent, object)
+    }),
+    on("removeObjectEvent", id => {
+        fire(removeObjectEvent, object)
+        objects.delete(object.id)
+    }),
 
     // player callbacks
-
-    function newPlayer(player) {
-        
+    on("createPlayerEvent", player => {
         players.set(player.id, player)
-
-        fire(newPlayerEvent, player)
-    }
-
-    function updatePlayer(player) {
+        fire(createPlayerEvent, player)
+    }),
+    on("updatePlayerEvent", player => {
         players.set(player.id, player)
-
         fire(updatePlayerEvent, player)
-    }
-
-    function removePlayer(id) {
+    }),
+    on("removePlayerEvent", id => {
         fire(removePlayerEvent, players.get(id))
-
         players.delete(id)
-    }
-
-    // connect to the server and register the callbacks and return the connection
-    return barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
-        on(socketEvent.enter, () => fire(connectEvent)),
-        on(socketEvent.leave, () => fire(disconnectEvent)),
-        on("newObject", newObject),
-        on("playerJoin", newPlayer),
-        on("playerLeft", removePlayer),
-        on("update", updatePlayer),
-        on("turn", callback => onTurnCallback((turn) => callback({id: name, turn})))
-    ])
-})()
+    }),
+    
+    // outher callbaks
+    on("turn", callback => onTurnCallback(turn => callback({id: name, turn})))
+])
 
 // log that the server disconnected
-on( disconnectEvent, () => console.log("server closed") )
+on( leaveServerEvent, () => console.log("server closed") )

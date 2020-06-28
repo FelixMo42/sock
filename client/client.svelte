@@ -3,8 +3,8 @@
 	import { tweened } from 'svelte/motion'
 
 	import Grapics from "./lib/grapics.svelte"
-	import { on } from "eventmonger"
-	import { name , getPlayer, newPlayerEvent, updatePlayerEvent} from "./lib/api"
+	import { on, when } from "eventmonger"
+	import { name, isOurPlayer, createPlayerEvent, updatePlayerEvent} from "./lib/api"
 
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
@@ -24,16 +24,13 @@
 		selectedMove = move
 	})
 
-	const updatePlayer = player => {
-		// make sure that our is the player
-		if ( player != getPlayer() ) return
-
+	const updatePlayer = when(isOurPlayer, player => {
 		// update the hp and mp
 		percenthp.set(player.hp / player.maxhp * 100)
 		percentmp.set(player.mp / player.maxhp * 100)
-	}
+	})
 
-	on(newPlayerEvent, updatePlayer)
+	on(createPlayerEvent, updatePlayer)
 	on(updatePlayerEvent, updatePlayer)
 </script>
 
