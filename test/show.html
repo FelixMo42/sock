@@ -1,0 +1,18 @@
+<body>
+    <div id="body"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.0/pixi.min.js"></script>
+
+    <script>
+        const width = 750
+        const height = 750
+        const PI = Math.PI
+        const app = new PIXI.Application({width, height})
+        document.getElementById("body").appendChild(app.view)
+
+        // set the backgroud color
+        app.renderer.backgroundColor = 0x5F9A62
+
+        
+    </script>
+</body>

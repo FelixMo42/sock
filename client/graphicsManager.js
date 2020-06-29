@@ -1,8 +1,9 @@
 import { app, offset } from "./lib/graphics"
 import { on } from 'eventmonger'
 import * as PIXI from 'pixi.js'
-import { meter, drawTime } from "./config"
+import { meter, drawTime, bgColor } from "./config"
 import { ease } from 'pixi-ease'
+import { drawTree, drawWall } from "./art"
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
@@ -10,7 +11,7 @@ import {
 } from "./lib/api"
 
 // set the backgroud color
-app.renderer.backgroundColor = 0x425421
+app.renderer.backgroundColor = bgColor
 
 const center = meter / 2
 const sprites = new Map()
@@ -34,7 +35,6 @@ const removeSprite = source => {
 const getSprite = source => sprites.get(source.id)
 
 const toGlobal = n => n * meter
-const toGlobalCords = ({x, y}) => [x * meter, y * meter]
 const toCentered = n => n * meter + center
 
 const moveCameraToSprite = sprite => offset(
@@ -49,19 +49,28 @@ const moveCameraToSprite = sprite => offset(
 on(createObjectEvent, object => {
 	let sprite = new PIXI.Graphics()
 
+	sprite.lineStyle(3, 0x000000, 1.0)
+	sprite.filters = [ new PIXI.filters.FXAAFilter() ]
+
+	sprite.x = toGlobal(object.x)
+	sprite.y = toGlobal(object.y)
+
+	let w = toGlobal(object.width)
+	let h = toGlobal(object.height)
+
 	if ( object.name == "wall" ) {
 		sprite.beginFill(0x1e2021)
-		sprite.drawRect( ...toGlobalCords(object), toGlobal(object.width), toGlobal(object.height))
+		sprite.drawRect(0, 0, w, h)
 		sprite.endFill()
+
+		drawWall(sprite, 0,0 , w,0)
+		drawWall(sprite, w,0 , w,h)
+		drawWall(sprite, w,h , 0,h)
+		drawWall(sprite, 0,h , 0,0)
 	}
 
 	if ( object.name == "tree" ) {
-		sprite.beginFill(0x302621)
-		sprite.drawCircle(0, 0, 25)
-		sprite.endFill()
-
-		sprite.x = toCentered(object.x)
-		sprite.y = toCentered(object.y)
+		drawTree(sprite, w / 2, h / 2)
 	}
 
 	addSprite(object, sprite)
