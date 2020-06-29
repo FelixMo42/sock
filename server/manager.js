@@ -30,7 +30,7 @@ export const createPlayer = config => {
     players.set(player.id, player).write()
 
     // tell the world the news of the new player
-    fire(createPlayerEvent, player)
+    fire(createPlayerEvent, player.id)
 
     return player
 }

@@ -16,17 +16,20 @@ app.renderer.backgroundColor = bgColor
 const center = meter / 2
 const sprites = new Map()
 
-const addSprite = (source, sprite) => {
+const addSprite = (source, sprite, location=app.stage) => {
     // add the sprite to the stage so that is will be shown
-    app.stage.addChild(sprite)
+    location.addChild(sprite)
 
     // keep a refrence to it so we can find it again
     sprites.set(source.id, sprite)
 }
 
 const removeSprite = source => {
-    // remove the sprite form the world of the visble
-    app.stage.removeChild( sprites.get(source.id) )
+	// get the sprite of our interest
+	let sprite = sprites.get(source.id)
+
+    // remove the sprite form watever container it is in
+	sprite.parent.removeChild(sprite)
 
     // trash are refrence to it
     sprites.delete(source.id)
@@ -37,43 +40,52 @@ const getSprite = source => sprites.get(source.id)
 const toGlobal = n => n * meter
 const toCentered = n => n * meter + center
 
-const moveCameraToSprite = sprite => offset(
-	sprite.x - window.innerWidth / 2,
-	sprite.y - window.innerHeight / 2
-)
+const moveCameraToSprite = sprite => offset(sprite.x, sprite.y)
+
+/*//////////*/
+/*| layers |*/
+/*//////////*/
+
+let mains = new PIXI.Container()
+app.stage.addChild(mains)
+
+let walls = new PIXI.Graphics()
+walls.lineStyle(3, 0x000000, 1.0)
+walls.filters = [ new PIXI.filters.FXAAFilter() ]
+app.stage.addChild(walls)
+
+let trees = new PIXI.Graphics()
+trees.lineStyle(3, 0x000000, 1.0)
+trees.filters = [ new PIXI.filters.FXAAFilter() ]
+app.stage.addChild(trees)
 
 /*////////////////*/
 /*| Draw Objects |*/
 /*////////////////*/
 
 on(createObjectEvent, object => {
-	let sprite = new PIXI.Graphics()
-
-	sprite.lineStyle(3, 0x000000, 1.0)
-	sprite.filters = [ new PIXI.filters.FXAAFilter() ]
-
-	sprite.x = toGlobal(object.x)
-	sprite.y = toGlobal(object.y)
-
 	let w = toGlobal(object.width)
 	let h = toGlobal(object.height)
 
-	if ( object.name == "wall" ) {
-		sprite.beginFill(0x1e2021)
-		sprite.drawRect(0, 0, w, h)
-		sprite.endFill()
+	let x = toGlobal(object.x)
+	let y = toGlobal(object.y)
 
-		drawWall(sprite, 0,0 , w,0)
-		drawWall(sprite, w,0 , w,h)
-		drawWall(sprite, w,h , 0,h)
-		drawWall(sprite, 0,h , 0,0)
+	if ( object.name == "wall" ) {
+		walls.beginFill(0x1e2021)
+		walls.drawRect(x, y, w, h)
+		walls.endFill()
+
+		drawWall(walls, x,y , 0,0 , w,0)
+		drawWall(walls, x,y , w,0 , w,h)
+		drawWall(walls, x,y , w,h , 0,h)
+		drawWall(walls, x,y , 0,h , 0,0)
 	}
 
 	if ( object.name == "tree" ) {
-		drawTree(sprite, w / 2, h / 2)
+		drawTree(trees, x + w / 2, y + h / 2)
 	}
 
-	addSprite(object, sprite)
+	// addSprite(object, graphicsToSprite(sprite, toGlobal(object.x), toGlobal(object.y)))
 } )
 
 on(removeObjectEvent, object => removeSprite(object) )
@@ -84,6 +96,8 @@ on(removeObjectEvent, object => removeSprite(object) )
 
 on(createPlayerEvent, player => {
 	let sprite = new PIXI.Graphics()
+
+	sprite.filters = [ new PIXI.filters.FXAAFilter() ]
 
 	// draw a circle
 	sprite.beginFill(0x333333)
@@ -118,7 +132,7 @@ on(createPlayerEvent, player => {
 		sprite.addChild(text)
 	}
 
-	addSprite(player, sprite)
+	addSprite(player, sprite, mains)
 } )
 
 on(updatePlayerEvent, player => {

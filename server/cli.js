@@ -1,3 +1,5 @@
+import commander from 'commander'
+import { clear } from './database.js'
 import { createObject } from "./manager.js"
 import { isEmptyPosition, random } from "./util.js"
 
@@ -28,16 +30,16 @@ const createObjectIfSpotAvailabe = (name, x, y, width, height) => {
     return createObject({name, x, y, width, height})
 }
 
+const killall = () => clear(["players"])
+
 /*/////////////*/
 /*| commander |*/
 /*/////////////*/
 
-import commander from 'commander'
-import { clear } from './database.js'
-
 commander.program.version('1.0.0')
 commander.program.command('clear').action(clear)
 commander.program.command('generate').action(generateNewMap)
+commander.program.command('killall').action(killall)
 
 console.log("")
 commander.program.parse(process.argv)

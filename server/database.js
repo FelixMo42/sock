@@ -19,12 +19,9 @@ export const players = root.get("players")
 export const objects = root.get("objects")
 export const actions = root.get("actions")
 
-export const clear = () => {
-    root.set("players", {})
-        .set("objects", {})
-        .write()
-
-    console.log("cleared players and objects from db.")
+export const clear = (tables=["players", "objects"]) => {
+    for (let table of tables) root.set(table, {})
+    root.write()
 }
 
 export const generate = () => {

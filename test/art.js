@@ -1,20 +1,20 @@
 const PI = Math.PI
 
-export const range = (min, max) => () => Math.random() * (max - min) + min
-export const randomAngle = range(0, 2 * PI)
+const range = (min, max) => () => Math.random() * (max - min) + min
+const randomAngle = range(0, 2 * PI)
 
 const defaultTreeSize = range(40, 100)
 
-export const rotation = (x, y, angle) => (w, h) => [
+const rotation = (x, y, angle) => (w, h) => [
     x + w * Math.cos(angle) - h * Math.sin(angle),
     y + w * Math.sin(angle) + h * Math.cos(angle)
 ]
 
-export function interpolate(p, n1, n2) {
+function interpolate(p, n1, n2) {
     return n1 + (n2 - n1) * p
 }
 
-export function drawLeafArc(map, x, y, r, size, start=0, angle=2 * PI) {
+function drawLeafArc(map, x, y, r, size, start=0, angle=2 * PI) {
     map.moveTo(
         x + Math.cos(start) * r,
         y + Math.sin(start) * r
@@ -37,7 +37,7 @@ export function drawLeafArc(map, x, y, r, size, start=0, angle=2 * PI) {
     }
 }
 
-export function drawTree(map, x, y, radius=defaultTreeSize()) {
+function drawTree(map, x, y, radius=defaultTreeSize()) {
     let leafsize = 30
 
     map.beginFill(0x276A58)
@@ -51,7 +51,7 @@ export function drawTree(map, x, y, radius=defaultTreeSize()) {
     }
 }
 
-export function drawBrick(map, x, y, angle, length, width, color=0xA3AC99) {
+function drawBrick(map, x, y, angle, length, width, color=0xA3AC99) {
     let rot = rotation(x, y, angle)
 
     map.beginFill(color)
@@ -64,7 +64,7 @@ export function drawBrick(map, x, y, angle, length, width, color=0xA3AC99) {
 
 }
 
-export function drawWall(map, bx , by , x1, y1, x2, y2) {
+function drawWall(map, x1, y1, x2, y2) {
     let width = range(10, 14)
     let length = range(30, 50)
 
@@ -81,8 +81,8 @@ export function drawWall(map, bx , by , x1, y1, x2, y2) {
         }
 
         drawBrick( map,
-            interpolate(p / walllength, x1, x2) + bx,
-            interpolate(p / walllength, y1, y2) + by,
+            interpolate(p / walllength, x1, x2),
+            interpolate(p / walllength, y1, y2),
             angle, l, width()
         )
 
@@ -90,7 +90,7 @@ export function drawWall(map, bx , by , x1, y1, x2, y2) {
     }
 }
 
-export function drawTile(map, x1, y1, x2, y2) {
+function drawTile(map, x1, y1, x2, y2) {
     let tilesize = 60
 
     map.beginFill(0xC1CCBC)
@@ -109,11 +109,11 @@ export function drawTile(map, x1, y1, x2, y2) {
     map.lineStyle(3, 0x000000, 1.0)
 }
 
-export function drawDoor(map, x, y, angle) {
+function drawDoor(map, x, y, angle) {
     drawBrick(map, x, y, angle, 60, 8, 0x855E42)
 }
 
-export function drawGround(map, x, y) {
+function drawGround(map, x, y) {
     
 }
 

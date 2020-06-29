@@ -3,7 +3,7 @@ import * as PIXI from 'pixi.js'
 // create a pixi application
 export const app = new PIXI.Application({
     width:  window.innerWidth,
-    height: window.innerHeight
+    height: window.innerHeight,
 })
 
 export let cameraX = 0
@@ -24,13 +24,16 @@ app.ticker.add(dt => {
         // camera is no longer dirty
         cameraDirty = false
 
+        let x = Math.floor(cameraX - window.innerWidth / 2)
+        let y = Math.floor(cameraY - window.innerHeight / 2)
+
         // move the hit box so its still in the front
-        app.stage.hitArea.x = cameraX
-        app.stage.hitArea.y = cameraY
+        app.stage.hitArea.x = x
+        app.stage.hitArea.y = y
 
         // move arond the graphics
-        app.stage.x = -cameraX
-        app.stage.y = -cameraY
+        app.stage.x = -x
+        app.stage.y = -y
     }
 })
 
@@ -42,6 +45,9 @@ window.onresize = () => {
 
     app.stage.hitArea.width  = window.innerWidth
     app.stage.hitArea.height = window.innerHeight
+
+    // weve resised, so we may need to adjust the camera
+    cameraDirty = true
 }
 
 // make the stage interactive so that these events actually will be called
