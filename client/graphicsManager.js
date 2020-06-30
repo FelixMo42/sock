@@ -1,9 +1,10 @@
-import { app, offset } from "./lib/graphics"
+import { app, moveCamera } from "./lib/graphics"
 import { on } from 'eventmonger'
 import * as PIXI from 'pixi.js'
 import { meter, drawTime, bgColor } from "./config"
 import { ease } from 'pixi-ease'
 import { drawTree, drawWall } from "./art"
+import { mouseMoved } from "./lib/mouse"
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
@@ -39,8 +40,6 @@ const getSprite = source => sprites.get(source.id)
 
 const toGlobal = n => n * meter
 const toCentered = n => n * meter + center
-
-const moveCameraToSprite = sprite => offset(sprite.x, sprite.y)
 
 /*//////////*/
 /*| layers |*/
@@ -91,7 +90,7 @@ on(createObjectEvent, object => {
 on(removeObjectEvent, object => removeSprite(object) )
 
 /*////////////////*/
-/*| Draw Players |*/
+/*| draw players |*/
 /*////////////////*/
 
 on(createPlayerEvent, player => {
@@ -113,7 +112,7 @@ on(createPlayerEvent, player => {
 
 	// if this is the player then focus on the camera on them
 	if ( isOurPlayer(player) ) {
-		moveCameraToSprite(sprite)
+		moveCamera(sprite)
 	} else {
 		// give the player a name tag
 		let text = new PIXI.Text( player.id, {
@@ -181,11 +180,29 @@ on(updatePlayerEvent, player => {
 	}
 	
 	// if this is the main player we need to move the camera so it fallows them
-	if ( isOurPlayer(player) ) anim.on("each", () => moveCameraToSprite(sprite) )
+	if ( isOurPlayer(player) ) anim.on("each", () => moveCamera(sprite) )
 } )
 
 on(removePlayerEvent, player => removeSprite(player) )
 
 /*//////////////*/
-/*| Draw Moves |*/
+/*| draw moves |*/
 /*//////////////*/
+
+{ // draw moves
+	let sprite = new PIXI.Graphics()
+
+	
+}
+
+{ // draw mouse cursor
+	let cursor = new PIXI.Graphics()
+	cursor.lineStyle(2,0x001100)
+	cursor.drawRoundedRect(0, 0, meter, meter, 10 , 10)
+	app.stage.addChild(cursor)
+
+	on(mouseMoved, ({x, y}) => {
+		cursor.x = Math.floor(x / meter) * meter
+		cursor.y = Math.floor(y / meter) * meter
+	})
+}

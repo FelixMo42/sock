@@ -1,20 +1,35 @@
-import EventQueue from './lib/eventqueue'
 import { Event, fire, on } from 'eventmonger'
+
+import EventQueue from './lib/eventqueue'
 import { pathfind } from './lib/path'
 import { keyUp, isNumeric, asNumber } from './lib/keyboard'
 import { mouseUp, mousePos } from './lib/mouse'
 import { getPlayerAtPosition, getPlayer, onTurn } from "./lib/api"
 import { meter } from "./config"
 
+import { flag, effects } from "./lib/dirty"
+
 // the list of moves
 const moves = new EventQueue()
 
+export const movesUpdatedEvent = Event()
+
+on(flag(moves), () => fire(movesUpdatedEvent, getMoves()))
+
+// easy way to access all the moves
+export const getMoves = () => [
+    currentMove,
+    ...moves.list
+]
+
+export const addMove = effects(moves, move => moves.add(move))
+
 // handle the callback to set the move
 let currentMove = { type: "wait" }
-onTurn(callback => moves.next(move => {
+onTurn(effects(moves, callback => moves.next(move => {
     currentMove = move
     callback(move)
-}))
+})))
 
 /*/////////////////////*/
 /*| Handle user input |*/
@@ -51,7 +66,7 @@ const attack = (target, type) => {
     if ( !player ) return false
 
     // add this attack to our list of moves
-    moves.add({ type, target: player.id })
+    addMove({ type, target: player.id })
 
     // return news of are success
     return true
@@ -59,7 +74,7 @@ const attack = (target, type) => {
 
 const goToPoint = (target, source=getPlayer().position) => {
     // pathfind to the target location then add all the points in the path to the event queue
-    pathfind(source, target).forEach(point => moves.add({type: "move", target: point}))
+    pathfind(source, target).forEach(point => addMove({type: "move", target: point}))
 }
 
 const mouseTile = () => ({
@@ -92,7 +107,7 @@ const select = num => {
     // bail early if were reselecting the same move
     if (selected == num) return true
 
-	// set the selected movez
+	// set the selected moves
     selected = num
 
     fire(selectedNewMove, getSelectedMove())
