@@ -1,5 +1,6 @@
 import { Event, fire, on } from 'eventmonger'
-import { app, cameraMoveEvent } from './graphics'
+import { app } from './display'
+import { cameraMoved } from "./camera"
 
 export let leftDown   = false
 export let rightDown  = false
@@ -25,7 +26,7 @@ const setButtonState = (button, state) => {
     if ( button == CENTER ) centerDown = state
 }
 
-on(cameraMoveEvent, updateMousePosition)
+on(cameraMoved, updateMousePosition)
 
 app.stage.on("mousemove", updateMousePosition)
 

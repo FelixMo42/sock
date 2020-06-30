@@ -1,5 +1,5 @@
 import { Event, fire } from "eventmonger"
-import { app } from "./graphics"
+import { app } from "../display/display"
 
 const isUnique = variable =>
     (typeof variable == "object" ||
@@ -26,7 +26,7 @@ export const pack = (add=(a, b) => b) => (event, next) => {
 }
 
 export const flag = (variable) => {
-    if ( !isUnique(variable) ) return console.error("Can only mark objects or functions!")
+    if ( !isUnique(variable) ) return console.error("Can only flag objects or functions!")
 
     let event = Event( pack() )
 

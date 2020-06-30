@@ -2,7 +2,7 @@
 	import { quintOut } from 'svelte/easing'
 	import { tweened } from 'svelte/motion'
 
-	import Grapics from "./lib/grapics.svelte"
+	import Grapics from "./display/display.svelte"
 	import { on, when } from "eventmonger"
 	import { name, isOurPlayer, createPlayerEvent, updatePlayerEvent} from "./lib/api"
 

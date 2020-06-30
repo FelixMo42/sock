@@ -1,13 +1,14 @@
 import { Event, fire, on } from 'eventmonger'
 
+import { keyUp, isNumeric, asNumber } from './display/keyboard'
+import { mouseUp, mousePos } from './display/mouse'
+
 import EventQueue from './lib/eventqueue'
 import { pathfind } from './lib/path'
-import { keyUp, isNumeric, asNumber } from './lib/keyboard'
-import { mouseUp, mousePos } from './lib/mouse'
 import { getPlayerAtPosition, getPlayer, onTurn } from "./lib/api"
-import { meter } from "./config"
-
 import { flag, effects } from "./lib/dirty"
+
+import { meter } from "./config"
 
 // the list of moves
 const moves = new EventQueue()

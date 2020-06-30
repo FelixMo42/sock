@@ -1,5 +1,5 @@
 <script>
-	import { app } from './graphics'
+	import { app } from './display'
 	import { onMount } from 'svelte'
 
 	// add the canvas to the dom

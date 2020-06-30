@@ -59,9 +59,9 @@ const makePath = target => {
 const equals = (a, b) => a.x == b.x && a.y == b.y
 
 export const pathfind = (start, target) => {
-    let open = new Heap()
+    let open  = new Heap()
     let closed = new Set()
-    let nodes = new Set()
+    let nodes  = new Set()
 
     open.add({ priority: 0, cost: 0, node: start })
 

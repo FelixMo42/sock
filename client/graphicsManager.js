@@ -1,15 +1,20 @@
-import { app, moveCamera } from "./lib/graphics"
 import { on } from 'eventmonger'
 import * as PIXI from 'pixi.js'
-import { meter, drawTime, bgColor } from "./config"
 import { ease } from 'pixi-ease'
-import { drawTree, drawWall } from "./art"
-import { mouseMoved } from "./lib/mouse"
+
+import { app } from "./display/display"
+import { moveCamera } from "./display/camera"
+import { mouseMoved } from "./display/mouse"
+
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-	isOurPlayer
+	isOurPlayer, getPlayer
 } from "./lib/api"
+
+import { movesUpdatedEvent, getMoves } from "./movesManager"
+import { meter, drawTime, bgColor } from "./config"
+import { drawTree, drawWall } from "./art"
 
 // set the backgroud color
 app.renderer.backgroundColor = bgColor
@@ -185,14 +190,38 @@ on(updatePlayerEvent, player => {
 
 on(removePlayerEvent, player => removeSprite(player) )
 
-/*//////////////*/
-/*| draw moves |*/
-/*//////////////*/
+/*///////////*/
+/*| draw ui |*/
+/*///////////*/
 
 { // draw moves
 	let sprite = new PIXI.Graphics()
+	sprite.lineStyle(3,0x000000)
+	app.stage.addChild(sprite)
 
-	
+	const redraw = () => {
+		sprite.clear()
+
+		sprite.moveTo(
+			toCentered(getPlayer().position.x),
+			toCentered(getPlayer().position.y)
+		)
+
+		for (let move of getMoves()) {
+			if ( move.type == "move" ) {
+				sprite.lineTo(
+					toCentered(move.target.x),
+					toCentered(move.target.y)
+				)
+			}
+		}
+
+		app.renderer.render(sprite)
+		app.renderer.render(app.stage)
+	}
+
+	on(movesUpdatedEvent, redraw)
+	// on()
 }
 
 { // draw mouse cursor
