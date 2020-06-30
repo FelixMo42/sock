@@ -17,13 +17,15 @@ export const movesUpdatedEvent = Event()
 
 on(flag(moves), () => fire(movesUpdatedEvent, getMoves()))
 
-// easy way to access all the moves
+// a way to access all the moves
 export const getMoves = () => [
     currentMove,
     ...moves.list
 ]
 
 export const addMove = effects(moves, move => moves.add(move))
+
+export const clearMoves = effects(moves, () => moves.clear())
 
 // handle the callback to set the move
 let currentMove = { type: "wait" }
@@ -44,6 +46,9 @@ on(keyUp, key => {
 on(mouseUp, button => {
     // we cant do anything if we dont have a player
     if ( !getPlayer() ) return
+
+    // first clear the list of moves
+    clearMoves()
 
     // what move are we trying to do?
     let move = getSelectedMove()

@@ -1,4 +1,4 @@
-import { Application } from 'pixi.js'
+import { Application, Rectangle } from 'pixi.js'
 import { Event, fire } from "eventmonger"
 
 export const canvasResized = Event()
@@ -22,4 +22,5 @@ window.onresize = () => effects(camera, () => {
 })
 
 // make the stage interactive so that these events actually will be called
+app.stage.hitArea = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
 app.stage.interactive = true

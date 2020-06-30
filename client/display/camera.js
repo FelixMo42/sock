@@ -1,6 +1,6 @@
 import { on } from 'eventmonger'
 import { flag, effect, effects } from '../lib/dirty'
-import { app } from "./display"
+import { app, canvasResized } from "./display"
 
 export const camera = { x: 0, y: 0 }
 

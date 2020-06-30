@@ -1,4 +1,4 @@
-import { on } from 'eventmonger'
+import { Event, on, fire } from 'eventmonger'
 import * as PIXI from 'pixi.js'
 import { ease } from 'pixi-ease'
 
@@ -9,7 +9,7 @@ import { mouseMoved } from "./display/mouse"
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-	isOurPlayer, getPlayer
+	isOurPlayer, getPlayer, hasPlayer
 } from "./lib/api"
 
 import { movesUpdatedEvent, getMoves } from "./movesManager"
@@ -46,19 +46,27 @@ const getSprite = source => sprites.get(source.id)
 const toGlobal = n => n * meter
 const toCentered = n => n * meter + center
 
+const moveCameraToPlayer = () => moveCamera( getSprite( getPlayer() ) )
+
+const ourPlayerMoved = Event()
+on(ourPlayerMoved, () => moveCameraToPlayer)
+
 /*//////////*/
 /*| layers |*/
 /*//////////*/
 
-let mains = new PIXI.Container()
+const moves = new PIXI.Graphics()
+app.stage.addChild(moves)
+
+const mains = new PIXI.Container()
 app.stage.addChild(mains)
 
-let walls = new PIXI.Graphics()
+const walls = new PIXI.Graphics()
 walls.lineStyle(3, 0x000000, 1.0)
 walls.filters = [ new PIXI.filters.FXAAFilter() ]
 app.stage.addChild(walls)
 
-let trees = new PIXI.Graphics()
+const trees = new PIXI.Graphics()
 trees.lineStyle(3, 0x000000, 1.0)
 trees.filters = [ new PIXI.filters.FXAAFilter() ]
 app.stage.addChild(trees)
@@ -109,7 +117,7 @@ on(createPlayerEvent, player => {
 	sprite.endFill()
 
 	// keep track of some stuff about the player so we can see if it changes
-	sprite.hp = player.hp
+	sprite.backup = player
 
 	// move the sprite to the right position
 	sprite.x = toCentered(player.position.x)
@@ -143,15 +151,20 @@ on(updatePlayerEvent, player => {
 	let sprite = getSprite(player)
 	
 	// slide that player into its new position
-	let anim = ease.add(sprite, {
-		x: toCentered(player.position.x),
-		y: toCentered(player.position.y)
-	}, {
-		duration: drawTime,
-		ease: "linear"
-	})
+	if ( sprite.backup.position.x != player.position.x || sprite.backup.position.y != player.position.y ) {
+		let anim = ease.add(sprite, {
+			x: toCentered(player.position.x),
+			y: toCentered(player.position.y)
+		}, {
+			duration: drawTime,
+			ease: "linear"
+		})
 
-	if ( sprite.hp != player.hp ) {
+		// if this is the main player we need to move the camera so it fallows them
+		if ( isOurPlayer(player) ) anim.on("each", () => fire(ourPlayerMoved) )
+	}
+
+	if ( sprite.backup.hp != player.hp ) {
 		//  make a colored tag showing how the players health has changed
 		let text = new PIXI.Text(player.hp - sprite.hp, {
 			fontFamily: 'Arial',
@@ -183,9 +196,6 @@ on(updatePlayerEvent, player => {
 		// remove the text when the animation is complete
 		anim.on("complete", () => app.stage.removeChild(text))
 	}
-	
-	// if this is the main player we need to move the camera so it fallows them
-	if ( isOurPlayer(player) ) anim.on("each", () => moveCamera(sprite) )
 } )
 
 on(removePlayerEvent, player => removeSprite(player) )
@@ -194,44 +204,34 @@ on(removePlayerEvent, player => removeSprite(player) )
 /*| draw ui |*/
 /*///////////*/
 
-{ // draw moves
-	let sprite = new PIXI.Graphics()
-	sprite.lineStyle(3,0x000000)
-	app.stage.addChild(sprite)
+app.ticker.add(() => {
+	if ( !hasPlayer() ) return
+	moves.clear()
+	moves.lineStyle(3,0x000000)
 
-	const redraw = () => {
-		sprite.clear()
+	moves.moveTo(
+		getSprite( getPlayer() ).x,
+		getSprite( getPlayer() ).y
+	)
 
-		sprite.moveTo(
-			toCentered(getPlayer().position.x),
-			toCentered(getPlayer().position.y)
-		)
-
-		for (let move of getMoves()) {
-			if ( move.type == "move" ) {
-				sprite.lineTo(
-					toCentered(move.target.x),
-					toCentered(move.target.y)
-				)
-			}
+	for (let move of getMoves()) {
+		if ( move.type == "move" ) {
+			moves.lineTo(
+				toCentered(move.target.x),
+				toCentered(move.target.y)
+			)
 		}
-
-		app.renderer.render(sprite)
-		app.renderer.render(app.stage)
 	}
 
-	on(movesUpdatedEvent, redraw)
-	// on()
-}
+	app.renderer.render(moves)
+})
 
-{ // draw mouse cursor
-	let cursor = new PIXI.Graphics()
-	cursor.lineStyle(2,0x001100)
-	cursor.drawRoundedRect(0, 0, meter, meter, 10 , 10)
-	app.stage.addChild(cursor)
+let cursor = new PIXI.Graphics()
+cursor.lineStyle(2,0x001100)
+cursor.drawRoundedRect(0, 0, meter, meter, 10 , 10)
+app.stage.addChild(cursor)
 
-	on(mouseMoved, ({x, y}) => {
-		cursor.x = Math.floor(x / meter) * meter
-		cursor.y = Math.floor(y / meter) * meter
-	})
-}
+on(mouseMoved, ({x, y}) => {
+	cursor.x = Math.floor(x / meter) * meter
+	cursor.y = Math.floor(y / meter) * meter
+})

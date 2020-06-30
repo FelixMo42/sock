@@ -12,17 +12,9 @@ export default class EventQueue {
     }
 
     add(item) {
-        this.list.unshift(item)
+        this.list.push(item)
 
         this.triggerCallback()
-    }
-
-    forEach(callback) {
-        this.list.forEach(callback)
-    }
-
-    map(callback) {
-        return this.list.map(callback)
     }
 
     triggerCallback() {
@@ -33,7 +25,7 @@ export default class EventQueue {
         if (this.callback == null) return
 
         // grab the first event and call the callback with it 
-        this.callback( this.list.pop() )
+        this.callback( this.list.shift() )
 
         // weve used this callback so remove it
         this.callback = null
@@ -41,7 +33,7 @@ export default class EventQueue {
 
     next(callback) {
         if (this.list.length > 0) {
-            callback( this.list.pop() )
+            callback( this.list.shift() )
         } else {
             this.callback = callback
         }
