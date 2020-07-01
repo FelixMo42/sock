@@ -4,7 +4,7 @@
 
 	import Grapics from "./display/display.svelte"
 	import { on, when } from "eventmonger"
-	import { name, isOurPlayer, createPlayerEvent, updatePlayerEvent} from "./lib/api"
+	import { name, isOurPlayer, createPlayerEvent, playerUpdateDone} from "./lib/api"
 
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
@@ -31,7 +31,7 @@
 	})
 
 	on(createPlayerEvent, updatePlayer)
-	on(updatePlayerEvent, updatePlayer)
+	on(playerUpdateDone, updatePlayer)
 </script>
 
 <main>

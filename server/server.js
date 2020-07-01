@@ -1,11 +1,13 @@
-import { players, actions, objects } from "./database.js"
 import { fire, on } from "eventmonger"
 import { isEmptyPosition, wait, getDistance, random } from "./util.js"
 import {
     createPlayer, removePlayer,
     createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-    createObjectEvent, updateObjectEvent, removeObjectEvent
+    createObjectEvent, updateObjectEvent, removeObjectEvent,
+    getPlayer, getObject, getAction,
+    getPlayers, getObjects, hasPlayer, setPlayer
 } from "./manager.js"
+import { effects } from "./effect.js"
 
 // the min and max time for how long player have to select moves
 const minTime = 500
@@ -14,6 +16,53 @@ const maxTime = 1000
 /*/////////////////////*/
 /*| do the moves baby |*/
 /*/////////////////////*/
+
+const isValidTarget = (action, source, target) => {
+    // make sure the target is in range
+    return getDistance(source.position, target.position) <= action.range
+}
+
+const applyMove = (move, changes) => {
+    let action = getAction( move.action )
+    let player = getPlayer( move.source )
+    let target = getPlayer( move.target )
+
+    if ( !action ) return console.error(`unknow action ${move.action}.`)
+
+    if ( !isValidTarget(action, player, target) ) return
+
+    for (let effect of action.effects) applyEffect(target, effect, changes)
+}
+
+const applyEffect = (target, [effect, value], changes) => {
+    effects.get(effect).apply(target, value).forEach(change => applyChange(target, change, changes))
+}
+
+const applyChange = (target, [aspect, value], changes) => {
+    if ( !changes.has(target) ) changes.set(target, new Map())
+
+    let change = changes.get( target )
+
+    change.set(aspect, aspect.type.add(value, change.has(aspect) ? change.get(aspect) : target[aspect.name]))
+}
+
+const updatePlayer = (changes, player) => {
+    let update = {}
+
+    for (let [aspect, value] of changes.entries()) {
+        let newValue = aspect.update(player, value)
+
+        update[aspect.name] = newValue
+
+        setPlayer(player, aspect, newValue)
+    }
+
+    fire(updatePlayerEvent, { player : player.id , update })
+}
+
+/*///////////////////////*/
+/*| core loop managment |*/
+/*///////////////////////*/
 
 const doPlayerMoves = () => new Promise(done => {
     let responses = new Set()
@@ -47,62 +96,14 @@ const doPlayerMoves = () => new Promise(done => {
     wait(maxTime).then(() => done(changes))
 })
 
-const isValidTarget = (action, source, target) => {
-    // make sure the target is in range
-    return getDistance(source.position, target.position) <= action.range
-}
-
-const applyMove = (move, changes) => {
-    let action = getAction( move.action )
-    let player = getPlayer( move.source )
-    let target = getPlayer( move.target )
-
-    if ( !action ) return console.error(`unknow action ${move.action}.`)
-
-    if ( !isValidTarget(action, player, target) ) return
-
-    for (let effect of action.effects) applyEffect(target, effect, changes)
-}
-
-const applyEffect = (target, [effect, value], changes) => {
-    effect.apply(target, value).forEach(change => applyChange(target, change, changes))
-}
-
-const applyChange = (target, [aspect, value], changes) => {
-    if ( !changes.has(target) ) changes.set(target, new Map())
-
-    let change = changes.get( target )
-
-    change.set(aspect.name, aspect.type.add( value, 
-        change.has(aspect.name) ? change.get(aspect.name) : target[aspect.name]
-    ) )
-}
-
-/*///////////////////////*/
-/*| core loop managment |*/
-/*///////////////////////*/
-
-const updatePlayer = (changes, player) => {
-    for (let [aspect, value] of changes.entries()) {
-        if ( aspect.type.eq( player[aspect.name], value ) ) {
-            changes.delete(aspect)
-        } else {
-            players.get(player.id).set(aspect.name, aspect.update(player, value))
-        }
-    }
-}
-
 const tick = async () => {
     // ask the players what they want to do
     let delay = wait(minTime)
     let changes = await doPlayerMoves()
     await delay
-    
+
     // change the players
     changes.forEach(updatePlayer)
-
-    // tell the world news of the players changes
-    for (let player of changes.keys()) fire(updatePlayerEvent, player)
 }
 
 const play = async () => {
@@ -117,13 +118,14 @@ const play = async () => {
 import express from "express"
 import { createServer } from "http"
 import barter, { enter, leave, reply } from "./barter.js"
+import { players } from "./database.js"
 
-on(createPlayerEvent, player => emit("createPlayerEvent", players.get(player).value()))
-on(updatePlayerEvent, player => emit("updatePlayerEvent", players.get(player).value()))
+on(createPlayerEvent, player => emit("createPlayerEvent", getPlayer(player)))
+on(updatePlayerEvent, update => emit("updatePlayerEvent", update))
 on(removePlayerEvent, player => emit("removePlayerEvent", player))
 
-on(createObjectEvent, object => emit("createObjectEvent", objects.get(object).value()))
-on(updateObjectEvent, object => emit("updateObjectEvent", objects.get(object).value()))
+on(createObjectEvent, object => emit("createObjectEvent", getObject(object)))
+on(updateObjectEvent, update => emit("updateObjectEvent", update))
 on(removeObjectEvent, object => emit("removeObjectEvent", object))
 
 const spawnPlayer = id => {
@@ -144,13 +146,13 @@ const spawnPlayer = id => {
 
 const addClient = (client, {ids}) => {
     // tell the new client of all the objects in the world
-    for (let object of objects.values()) client("createObjectEvent", object)
+    for (let object of getObjects()) client("createObjectEvent", object)
 
     // tell the new client of all the players in the server
-    for (let player of players.values()) client("createPlayerEvent", player)
+    for (let player of getPlayers()) client("createPlayerEvent", player)
 
     // make sure we have all the players the agent wants
-    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer(id)
+    for (let id of ids) if ( !hasPlayer(id) ) spawnPlayer(id)
 }
 
 // set up express app

@@ -1,6 +1,6 @@
 import uuid from "uuid"
 import { Event, fire } from "eventmonger"
-import { players, objects } from "./database.js"
+import { players, objects, actions } from "./database.js"
 
 export const createObjectEvent = Event()
 export const updateObjectEvent = Event()
@@ -43,6 +43,14 @@ export const removePlayer = player => {
     players.unset(player)
 }
 
+export const getPlayer = id => players.get(id).value()
+
+export const hasPlayer = id => players.has(id)
+
+export const getPlayers = () => players.values()
+
+export const setPlayer = (player, aspect, value) => players.get(player.id).set(aspect.name, value).write()
+
 /*////////////////////*/
 /*| object functions |*/
 /*////////////////////*/
@@ -75,3 +83,19 @@ export const removeObject = object => {
     // and remove it from the database
     objects.unset(object)
 }
+
+export const getObject = id => objects.get(id).value()
+
+export const hasObject = id => objects.has(id)
+
+export const getObjects = () => objects.values()
+
+/*////////////////////*/
+/*| action functions |*/
+/*////////////////////*/
+
+export const getAction = id => actions.get(id).value()
+
+export const hasAction = id => actions.has(id)
+
+export const getActions = () => actions.values()

@@ -51,6 +51,8 @@ export const createPlayerEvent = Event()
 export const updatePlayerEvent = Event()
 export const removePlayerEvent = Event()
 
+export const playerUpdateDone = Event()
+
 /*///////////////////////*/
 /*| backend setup stuff |*/
 /*///////////////////////*/
@@ -100,9 +102,16 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
         players.set(player.id, player)
         fire(createPlayerEvent, player)
     }),
-    on("updatePlayerEvent", player => {
-        players.set(player.id, player)
-        fire(updatePlayerEvent, player)
+    on("updatePlayerEvent", update => {
+        let player = update.player = players.get(update.player)
+
+        // tell people what parts of the player updated
+        fire(updatePlayerEvent, update)
+
+        // update the player!
+        for (let [aspect, value] of Object.entries(update.update)) player[aspect] = value
+
+        fire(playerUpdateDone, player)
     }),
     on("removePlayerEvent", id => {
         fire(removePlayerEvent, players.get(id))
@@ -110,7 +119,7 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
     }),
     
     // outher callbaks
-    on("turn", onTurnCallback)
+    on("turn", callback => onTurnCallback(callback))
 ])
 
 // log that the server disconnected

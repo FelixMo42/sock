@@ -4,13 +4,12 @@ const Number = {
 }
 
 const Vector = {
-    add: ([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1],
-    sub: ([x0, y0], [x1, y1]) => [x0 - x1, y0 - y1],
-    eq:  ([x0, y0], [x1, y1]) => x0 == x1 && y0 == y1,
+    add: ({x0, y0}, {x1, y1}) => ({x: x0 + x1, y: y0 + y1}),
+    sub: ({x0, y0}, {x1, y1}) => ({x: x0 - x1, y: y0 - y1}),
+    eq:  ({x0, y0}, {x1, y1}) => x0 == x1 && y0 == y1,
 }
 
 const Aspect = (name, type, update) => ({name, type, update})
-const Effect = (name, apply) => ({name, apply})
 
 // aspects
 
@@ -18,7 +17,7 @@ export const health = Aspect("hp" , Number, (player, hp) => {
     hp = Math.min(hp, player.maxhp)
 
     // were out of health, and therefore dead
-    if (hp <= 0) removePlayer(player)
+    // if (hp <= 0) removePlayer(player)
 
     return hp
 })
@@ -34,7 +33,9 @@ export const position = Aspect("position" , Vector, (player, movement) => {
 
 // effects
 
-export const effects = [
-    Effect("damage" , (player, value) => [health, value]),
-    Effect("move"   , (player, target) => [position, Vector.sub(target, player.position)])
-]
+export const effects = new Map()
+
+const Effect = (name, apply) => effects.set(name, {name, apply})
+
+Effect("damage" , (player, value)  => [[health, value]])
+Effect("move"   , (player, target) => [[position, Vector.sub(target, player.position)]])

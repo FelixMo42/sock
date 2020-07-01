@@ -9,7 +9,7 @@ import { mouseMoved } from "./display/mouse"
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-	isOurPlayer, getPlayer, hasPlayer
+	isOurPlayer, getPlayer, hasPlayer, players
 } from "./lib/api"
 
 import { movesUpdatedEvent, getMoves } from "./movesManager"
@@ -27,21 +27,21 @@ const addSprite = (source, sprite, location=app.stage) => {
     location.addChild(sprite)
 
     // keep a refrence to it so we can find it again
-    sprites.set(source.id, sprite)
+    sprites.set(source, sprite)
 }
 
 const removeSprite = source => {
 	// get the sprite of our interest
-	let sprite = sprites.get(source.id)
+	let sprite = sprites.get(source)
 
     // remove the sprite form watever container it is in
 	sprite.parent.removeChild(sprite)
 
     // trash are refrence to it
-    sprites.delete(source.id)
+    sprites.delete(source)
 }
 
-const getSprite = source => sprites.get(source.id)
+const getSprite = source => sprites.get(source)
 
 const toGlobal = n => n * meter
 const toCentered = n => n * meter + center
@@ -116,9 +116,6 @@ on(createPlayerEvent, player => {
 	sprite.drawCircle(0, 0, 20)
 	sprite.endFill()
 
-	// keep track of some stuff about the player so we can see if it changes
-	sprite.backup = player
-
 	// move the sprite to the right position
 	sprite.x = toCentered(player.position.x)
 	sprite.y = toCentered(player.position.y)
@@ -128,7 +125,7 @@ on(createPlayerEvent, player => {
 		moveCamera(sprite)
 	} else {
 		// give the player a name tag
-		let text = new PIXI.Text( player.id, {
+		let text = new PIXI.Text( player, {
 			fontFamily: 'Arial',
 			fontSize: 18,
 			fill: 0xd0d0d0
@@ -147,14 +144,14 @@ on(createPlayerEvent, player => {
 	addSprite(player, sprite, mains)
 } )
 
-on(updatePlayerEvent, player => {
+on(updatePlayerEvent, ({player, update}) => {
 	let sprite = getSprite(player)
 	
 	// slide that player into its new position
-	if ( sprite.backup.position.x != player.position.x || sprite.backup.position.y != player.position.y ) {
+	if ( "position" in update ) {
 		let anim = ease.add(sprite, {
-			x: toCentered(player.position.x),
-			y: toCentered(player.position.y)
+			x: toCentered(update.position.x),
+			y: toCentered(update.position.y)
 		}, {
 			duration: drawTime,
 			ease: "linear"
@@ -164,23 +161,20 @@ on(updatePlayerEvent, player => {
 		if ( isOurPlayer(player) ) anim.on("each", () => fire(ourPlayerMoved) )
 	}
 
-	if ( sprite.backup.hp != player.hp ) {
+	if ( "hp" in update ) {
 		//  make a colored tag showing how the players health has changed
-		let text = new PIXI.Text(player.hp - sprite.hp, {
+		let text = new PIXI.Text(update.hp - player.hp, {
 			fontFamily: 'Arial',
 			fontSize: 18,
-			fill: (player.hp - sprite.hp < 0)? 0xff0000 : 0x4ee44e
+			fill: (update.hp > player.hp) ? 0x4ee44e : 0xff0000
 		})
 
 		// center the text
 		text.anchor.x = 0.5
 
-		// position the text on top of the player
+		// position the text on top of the sprite
 		text.x = sprite.x
 		text.y = sprite.y - 20
-
-		// save the new hp
-		sprite.hp = player.hp
 
 		// make the text slide up
 		let anim = ease.add(text, {
