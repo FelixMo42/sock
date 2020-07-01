@@ -1,9 +1,6 @@
-import express from "express"
-import { createServer } from "http"
-import barter, { enter, leave, reply } from "./barter.js"
 import { players, actions, objects } from "./database.js"
 import { fire, on } from "eventmonger"
-import { isEmptyPosition, wait, getDistance, addVector, addNumber, random } from "./util.js"
+import { isEmptyPosition, wait, getDistance, random } from "./util.js"
 import {
     createPlayer, removePlayer,
     createPlayerEvent, updatePlayerEvent, removePlayerEvent,
@@ -14,36 +11,13 @@ import {
 const minTime = 500
 const maxTime = 1000
 
-// list of aspects that agents can have
-const HP       = Symbol("aspect#hp")
-const POSITION = Symbol("aspect#position")
+/*/////////////////////*/
+/*| do the moves baby |*/
+/*/////////////////////*/
 
-/*////////*/
-/*| misc |*/
-/*////////*/
-
-on(createPlayerEvent, player => emit("createPlayerEvent", players.get(player).value()))
-on(updatePlayerEvent, player => emit("updatePlayerEvent", players.get(player).value()))
-on(removePlayerEvent, player => emit("removePlayerEvent", player))
-
-on(createObjectEvent, object => emit("createObjectEvent", objects.get(object).value()))
-on(updateObjectEvent, object => emit("updateObjectEvent", objects.get(object).value()))
-on(removeObjectEvent, object => emit("removeObjectEvent", object))
-
-const addClient = (client, {ids}) => {
-    // tell the new client of all the objects in the world
-    for (let object of objects.values()) client("createObjectEvent", object)
-
-    // tell the new client of all the players in the server
-    for (let player of players.values()) client("createPlayerEvent", player)
-
-    // make sure we have all the players the agent wants
-    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer(id)
-}
-
-const getPlayersActions = () => new Promise(done => {
+const doPlayerMoves = () => new Promise(done => {
     let responses = new Set()
-    let moves     = new Map()
+    let changes   = new Map()
 
     let numSent = emit("turn", on => [
         on( leave, client => {
@@ -54,49 +28,103 @@ const getPlayersActions = () => new Promise(done => {
             numSent -= 1
 
             // there are no more connected agents, so were done
-            if (numSent == 0) done(moves)
+            if (numSent == 0) done(changes)
         } ),
 
-        on( reply, (client, {id, turn}) => {
-            // mark that weve recived this clients respons
+        on( reply, (client, move) => {
+            // mark that weve recived this clients response
             responses.add( client )
 
             // bind the move to the agent the client is acting for
-            moves.set( id, turn)
+            applyMove( move, changes )
             
             // everyone has responded, were done here
-            if (responses.size == numSent) done(moves)
+            if (responses.size == numSent) done(changes)
         } )
     ]).length
 
     // the maxiumum amount of time people have to respond
-    wait(maxTime).then(() => done(moves))
+    wait(maxTime).then(() => done(changes))
 })
 
-const applyAction = (action, source) => {
-    // were being told to just chill for a turn
-    if ( action.type == "wait" ) return
+const isValidTarget = (action, source, target) => {
+    // make sure the target is in range
+    return getDistance(source.position, target.position) <= action.range
+}
 
-    // if were moving then just dirently apply it
-    if ( action.type == "move" ) return applyEffect({ type: POSITION, value: action.target }, source)
+const applyMove = (move, changes) => {
+    let action = getAction( move.action )
+    let player = getPlayer( move.source )
+    let target = getPlayer( move.target )
 
-    // make sure the action exist
-    if ( actions.has(action.type).value() ) {
-        // we have no valid target, let bail
-        if ( !players.has(action.target).value() ) return console.error(`unknown target ${action.target}`)
+    if ( !action ) return console.error(`unknow action ${move.action}.`)
 
-        // get the player were targeting
-        let target = players.get(action.target).value()
+    if ( !isValidTarget(action, player, target) ) return
 
-        // make sure the target is out of range
-        if ( getDistance( players.get(source).value().position, target.position ) > actions.get(action.type).value().range ) return
+    for (let effect of action.effects) applyEffect(target, effect, changes)
+}
 
-        // apply the damage effect
-        applyEffect({ type: HP, value: actions.get(action.type).value().value }, action.target)
-    } else {
-        console.error(`unknown action ${action.type}`)
+const applyEffect = (target, [effect, value], changes) => {
+    effect.apply(target, value).forEach(change => applyChange(target, change, changes))
+}
+
+const applyChange = (target, [aspect, value], changes) => {
+    if ( !changes.has(target) ) changes.set(target, new Map())
+
+    let change = changes.get( target )
+
+    change.set(aspect.name, aspect.type.add( value, 
+        change.has(aspect.name) ? change.get(aspect.name) : target[aspect.name]
+    ) )
+}
+
+/*///////////////////////*/
+/*| core loop managment |*/
+/*///////////////////////*/
+
+const updatePlayer = (changes, player) => {
+    for (let [aspect, value] of changes.entries()) {
+        if ( aspect.type.eq( player[aspect.name], value ) ) {
+            changes.delete(aspect)
+        } else {
+            players.get(player.id).set(aspect.name, aspect.update(player, value))
+        }
     }
 }
+
+const tick = async () => {
+    // ask the players what they want to do
+    let delay = wait(minTime)
+    let changes = await doPlayerMoves()
+    await delay
+    
+    // change the players
+    changes.forEach(updatePlayer)
+
+    // tell the world news of the players changes
+    for (let player of changes.keys()) fire(updatePlayerEvent, player)
+}
+
+const play = async () => {
+    while (true) await tick()
+}
+
+
+/*////////////////////*/
+/*| socket maintnace |*/
+/*////////////////////*/
+
+import express from "express"
+import { createServer } from "http"
+import barter, { enter, leave, reply } from "./barter.js"
+
+on(createPlayerEvent, player => emit("createPlayerEvent", players.get(player).value()))
+on(updatePlayerEvent, player => emit("updatePlayerEvent", players.get(player).value()))
+on(removePlayerEvent, player => emit("removePlayerEvent", player))
+
+on(createObjectEvent, object => emit("createObjectEvent", objects.get(object).value()))
+on(updateObjectEvent, object => emit("updateObjectEvent", objects.get(object).value()))
+on(removeObjectEvent, object => emit("removeObjectEvent", object))
 
 const spawnPlayer = id => {
     //  get a postion in the spawn box
@@ -114,84 +142,16 @@ const spawnPlayer = id => {
     })
 }
 
-/*////////////////////*/
-/*| effect managment |*/
-/*////////////////////*/
+const addClient = (client, {ids}) => {
+    // tell the new client of all the objects in the world
+    for (let object of objects.values()) client("createObjectEvent", object)
 
-// maps to keep track of all the users and outher stuff
-const effects = new Map()
+    // tell the new client of all the players in the server
+    for (let player of players.values()) client("createPlayerEvent", player)
 
-const setEffect = (aspect, target, callback) => {
-    // we dont have the effects map of this aspect yet, lets add it
-    if ( !effects.has(aspect) ) effects.set(aspect, new Map())
-
-    // get the effects map for this aspect
-    let effect = effects.get(aspect)
-
-    // get the previus effect for this 
-    let previous = effect.get(target)
-
-    // and finally set it to the new value
-    effect.set( target, callback( previous ) )
+    // make sure we have all the players the agent wants
+    for (let id of ids) if ( !players.has(id).value() ) spawnPlayer(id)
 }
-
-const applyEffect = (effect, target) => {
-    if (effect.type == POSITION) setEffect(POSITION, target, addVector(effect.value))
-
-    if (effect.type == HP) setEffect(HP, target, addNumber(effect.value))
-}
-
-const processEffect = (aspect, callback) => {
-    if ( effects.has(aspect) ) effects.get(aspect).forEach(callback)
-}
-
-/*///////////////////////*/
-/*| core loop managment |*/
-/*///////////////////////*/
-
-const tick = async () => {
-    // ask the players what they want to do
-    let delay = wait(minTime)
-    let moves = await getPlayersActions()
-    await delay
-    
-    // clear the list of effects so that we can repopulate it
-    effects.clear()
-
-    // apply the actions
-    moves.forEach( applyAction )
-
-    // look at the change in everyones hp
-    processEffect(HP, (damage, player) => {
-        // take that damage, feel the pain (or get healed, I dont know)
-        players.get(player).update("hp", hp => Math.min(hp + damage, players.get(player).get("maxhp").value())).write()
-
-        // were out of health, and therefore dead
-        if (players.get(player).value().hp <= 0) removePlayer(player)
-    })
-
-    processEffect(POSITION, (target, player) => {
-        // we need the players position a lot for this
-        const position = players.get(player).value().position
-
-        // if were not moving, then were done here 
-        if ( position.x == target.x && position.y == target.y ) return false
-
-        // if the target location is empty move there
-        if ( isEmptyPosition( target ) ) players.get(player).set(`position`, target).write()
-    })
-
-    // tell the world news of the players changes
-    for (let player of players.keys()) fire(updatePlayerEvent, player)
-}
-
-const play = async () => {
-    while (true) await tick()
-}
-
-/*/////////////////*/
-/*| initilization |*/
-/*/////////////////*/
 
 // set up express app
 const app = express()
@@ -205,6 +165,10 @@ const emit = barter(server, on => [
     on(enter, addClient),
     on(leave, () => {})
 ])
+
+/*/////////////////*/
+/*| initilization |*/
+/*/////////////////*/
 
 // listen in on our fav port
 server.listen(4242)

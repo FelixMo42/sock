@@ -91,8 +91,8 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
         fire(updateObjectEvent, object)
     }),
     on("removeObjectEvent", id => {
-        fire(removeObjectEvent, object)
-        objects.delete(object.id)
+        fire(removeObjectEvent, objects.get(id))
+        objects.delete(id)
     }),
 
     // player callbacks
@@ -110,7 +110,7 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
     }),
     
     // outher callbaks
-    on("turn", callback => onTurnCallback(turn => callback({id: name, turn})))
+    on("turn", onTurnCallback)
 ])
 
 // log that the server disconnected

@@ -28,10 +28,14 @@ export const addMove = effects(moves, move => moves.add(move))
 export const clearMoves = effects(moves, () => moves.clear())
 
 // handle the callback to set the move
-let currentMove = { type: "wait" }
+let currentMove = { action: "wait" }
 onTurn(effects(moves, callback => moves.next(move => {
     currentMove = move
-    callback(move)
+    callback({
+        action: move.action,
+        source: getPlayer().id,
+        target: move.target
+    })
 })))
 
 /*/////////////////////*/
@@ -51,20 +55,20 @@ on(mouseUp, button => {
     clearMoves()
 
     // what move are we trying to do?
-    let move = getSelectedMove()
+    let action = getSelectedMove()
     
     // if were trying to move then do that
-    if ( move == "walk" ) goToPoint( mouseTile() )
+    if ( action == "walk" ) goToPoint( mouseTile() )
 
     // outher wise attack!
-    else attack( mouseTile(), move )
+    else attack( mouseTile(), action )
 })
 
 /*/////////////////////*/
 /*| utility functions |*/
 /*/////////////////////*/
 
-const attack = (target, type) => {
+const attack = (target, action) => {
     // get the player at the target position
     let player = getPlayerAtPosition(target)
 
@@ -72,7 +76,7 @@ const attack = (target, type) => {
     if ( !player ) return false
 
     // add this attack to our list of moves
-    addMove({ type, target: player.id })
+    addMove({ action, target: player.id })
 
     // return news of are success
     return true
@@ -80,7 +84,7 @@ const attack = (target, type) => {
 
 const goToPoint = (target, source=getPlayer().position) => {
     // pathfind to the target location then add all the points in the path to the event queue
-    pathfind(source, target).forEach(point => addMove({type: "move", target: point}))
+    pathfind(source, target).forEach(point => addMove({action: "move", target: point}))
 }
 
 const mouseTile = () => ({

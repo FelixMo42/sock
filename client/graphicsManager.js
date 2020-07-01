@@ -215,7 +215,7 @@ app.ticker.add(() => {
 	)
 
 	for (let move of getMoves()) {
-		if ( move.type == "move" ) {
+		if ( move.action == "move" ) {
 			moves.lineTo(
 				toCentered(move.target.x),
 				toCentered(move.target.y)

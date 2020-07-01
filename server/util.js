@@ -1,8 +1,5 @@
 import { players, objects } from "./database.js"
 
-export const addVector = a => (b={x:0,y:0}) => ({x: a.x + b.x, y: a.y + b.y})
-export const addNumber = a => (b=0) => a + b
-
 export const wait = ms => new Promise(done => setTimeout(done, ms))
 
 export const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
