@@ -31,6 +31,8 @@ const addSprite = (source, sprite, location=app.stage) => {
 }
 
 const removeSprite = source => {
+	console.log(source)
+	
 	// get the sprite of our interest
 	let sprite = sprites.get(source)
 

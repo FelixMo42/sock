@@ -4,18 +4,18 @@
 
 	import Grapics from "./display/display.svelte"
 	import { on, when } from "eventmonger"
-	import { name, isOurPlayer, playerCreated, playerUpdateDone} from "./lib/api"
+	import { name, isOurPlayer, playerCreated, playerUpdateDone, playerRemoved} from "./lib/api"
 
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
 
 	let selectedMove = getSelectedMove()
 
-	let percenthp = tweened(100, {
+	let percenthp = tweened(0, {
 		duration: 400,
 		easing: quintOut
 	})
-	let percentmp = tweened(100, {
+	let percentmp = tweened(0, {
 		duration: 400,
 		easing: quintOut
 	})
@@ -32,6 +32,11 @@
 
 	on(playerCreated, updatePlayer)
 	on(playerUpdateDone, updatePlayer)
+
+	on(playerRemoved, () => {
+		percenthp.set(0)
+		percentmp.set(0)
+	})
 </script>
 
 <main>

@@ -77,11 +77,11 @@ const play = async () => {
 
 on(playerCreated, player => emit("playerCreated", player))
 on(playerUpdated, update => emit("playerUpdated", update))
-on(playerRemoved, player => emit("playerRemoved", player))
+on(playerRemoved, player => emit("playerRemoved", player.id))
 
 on(objectCreated, object => emit("objectCreated", object))
 on(objectUpdated, update => emit("objectUpdated", update))
-on(objectRemoved, object => emit("objectRemoved", object))
+on(objectRemoved, object => emit("objectRemoved", object.id))
 
 const spawnPlayer = id => {
     //  get a postion in the spawn box

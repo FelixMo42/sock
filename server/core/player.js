@@ -29,24 +29,29 @@ export const createPlayer = config => {
 
 export const updatePlayer = (changes, player) => {
     let update = {}
+    let dead = false
 
     for (let [aspect, value] of changes.entries()) {
-        let newValue = aspect.update(player, value)
+        let newValue = aspect.update(player, value, () => dead = true)
 
         update[aspect.name] = newValue
 
         setPlayer(player, aspect, newValue)
     }
 
-    fire(playerUpdated, { player : player.id , update })
+    if (dead) {
+        removePlayer(player)
+    } else {
+        fire(playerUpdated, { player : player.id , update })
+    }
 }
 
 export const removePlayer = player => {
     // give the world fair warning of are actions
-    fire(defaultPlayerEvent, player)
+    fire(playerRemoved, player)
 
     // and remove it from the database
-    players.unset(player)
+    players.unset(player.id).write()
 }
 
 export const getPlayer = id => players.get(id).value()
