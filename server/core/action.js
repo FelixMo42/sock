@@ -1,7 +1,7 @@
-import { fire }  from "eventmonger"
-import { effects } from "./effect.js"
-import { updatePlayerEvent, getPlayer, hasPlayer, setPlayer } from "./manager.js"
-import { inRange } from "./util.js"
+import { inRange } from "../util.js"
+import { actions } from "../database.js"
+import { applyEffect } from "./effect.js"
+import { getPlayer, hasPlayer } from "./player.js"
 
 /**
  * @typedef Action
@@ -11,6 +11,16 @@ import { inRange } from "./util.js"
  * @property {*} targets
  * @property {*} effects
  */
+
+/*////////////////////*/
+/*| action functions |*/
+/*////////////////////*/
+
+export const getAction = id => actions.get(id).value()
+
+export const hasAction = id => actions.has(id).value()
+
+export const getActions = () => actions.values()
 
 /*///////////////////////////*/
 /*| action input validation |*/
@@ -44,9 +54,9 @@ export const isValidInputs = (action, source, inputs) => {
     return action.expects.every((expect, i) => isValidInput(source, inputs[i], expect))
 }
 
-/*////////////////*/
-/*| the resolver |*/
-/*////////////////*/
+/*///////////////////////*/
+/*| the mighty resolver |*/
+/*///////////////////////*/
 
 const getInput = (action, inputs, i) => {
     let expect = action.expects[i]
@@ -68,9 +78,9 @@ const Resolver = (action, source, inputs) => (request) => {
     if ( path[0] == "input" ) return getInput(action, inputs, 0)
 }
 
-/*///////////////////*/
-/*| the apply chain |*/
-/*///////////////////*/
+/*/////////*/
+/*| apply |*/
+/*/////////*/
 
 export const applyAction = (action, source, inputs, changes) => {
     if ( !isValidInputs(action, source, inputs) ) return
@@ -80,34 +90,4 @@ export const applyAction = (action, source, inputs, changes) => {
     let target = resolve( action.targets )
 
     for (let [effect, value] of action.effects) applyEffect(effect, resolve(value), target, changes)
-}
-
-export const applyEffect = (effect, value, target, changes) => {
-    effects.get(effect).apply(target, value).forEach(change => applyChange(target, change, changes))
-}
-
-export const applyChange = (target, [aspect, value], changes) => {
-    if ( !changes.has(target) ) changes.set(target, new Map())
-
-    let change = changes.get( target )
-
-    change.set(aspect, aspect.type.add(value, change.has(aspect) ? change.get(aspect) : target[aspect.name]))
-}
-
-/*////////*/
-/*| misc |*/
-/*////////*/
-
-export const updatePlayer = (changes, player) => {
-    let update = {}
-
-    for (let [aspect, value] of changes.entries()) {
-        let newValue = aspect.update(player, value)
-
-        update[aspect.name] = newValue
-
-        setPlayer(player, aspect, newValue)
-    }
-
-    fire(updatePlayerEvent, { player : player.id , update })
 }

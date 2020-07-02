@@ -1,16 +1,15 @@
 import { on } from "eventmonger"
-import { isEmptyPosition, wait, random } from "./util.js"
-import {
-    createPlayer, removePlayer,
-    createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-    createObjectEvent, updateObjectEvent, removeObjectEvent,
-    getPlayer, getObject, getAction,
-    getPlayers, getObjects, hasPlayer
-} from "./manager.js"
-import { applyAction, updatePlayer } from "./action.js"
 import express from "express"
 import { createServer } from "http"
+import { isEmptyPosition, wait, random } from "./util.js"
 import barter, { enter, leave, reply } from "./barter.js"
+import {
+    createPlayer, updatePlayer, removePlayer,
+    createPlayerEvent, updatePlayerEvent, removePlayerEvent,
+    getPlayer, getPlayers, hasPlayer
+} from "./core/player.js"
+import { createObjectEvent, updateObjectEvent, removeObjectEvent, getObject, getObjects } from "./core/object.js"
+import { getAction, applyAction } from "./core/action.js"
 
 // the min and max time for how long player have to select moves
 const minTime = 500

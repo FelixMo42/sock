@@ -1,6 +1,9 @@
 import low from 'lowdb'
 import FileSync from 'lowdb/adapters/FileSync.js'
 
+// import the config file
+import "./config.js"
+
 // where is this titular database
 const file = "./.database.json"
 
