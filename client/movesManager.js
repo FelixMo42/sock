@@ -5,7 +5,7 @@ import { mouseUp, mousePos } from './display/mouse'
 
 import EventQueue from './lib/eventqueue'
 import { pathfind } from './lib/path'
-import { getPlayerAtPosition, getPlayer, onTurn } from "./lib/api"
+import { getObjectAtPosition, getOurPlayer, onTurn } from "./lib/api"
 import { flag, effects } from "./lib/dirty"
 
 import { meter } from "./config"
@@ -32,7 +32,7 @@ let currentMove = { action: "wait" }
 onTurn(effects(moves, callback => moves.next(move => {
     currentMove = move
     
-    callback({ source: getPlayer().id, ...move })
+    callback({ source: getOurPlayer().id, ...move })
 })))
 
 /*/////////////////////*/
@@ -46,7 +46,7 @@ on(keyUp, key => {
 
 on(mouseUp, button => {
     // we cant do anything if we dont have a player
-    if ( !getPlayer() ) return
+    if ( !getOurPlayer() ) return
 
     // first clear the list of moves
     clearMoves()
@@ -67,7 +67,7 @@ on(mouseUp, button => {
 
 const attack = (target, action) => {
     // get the player at the target position
-    let player = getPlayerAtPosition(target)
+    let player = getObjectAtPosition(target)
 
     // theres no player here, its a lie
     if ( !player ) return false
@@ -79,7 +79,7 @@ const attack = (target, action) => {
     return true
 }
 
-const goToPoint = (target, source=getPlayer().position) => {
+const goToPoint = (target, source=getOurPlayer().position) => {
     // pathfind to the target location then add all the points in the path to the event queue
     pathfind(source, target).forEach(point => addMove({action: "move", inputs: [point]}))
 }

@@ -1,19 +1,17 @@
 import Heap from "./heap"
-import { objects, players, getDistance } from "./api"
+import { objects, getDistance } from "./api"
 
 const MAX_SEARCH_SIZE = 100000
 
 export const Vector = (x, y) => ({x, y})
 
-const objectIncludes = (object, {x, y}) => x >= object.x && x < object.x + object.width && y >= object.y && y < object.y + object.height
+const objectIncludes = (object, {x, y}) =>
+    x >= object.position.x && x < object.position.x + object.width &&
+    y >= object.position.y && y < object.position.y + object.height
 
 const isWalkable = position => {
     for (let object of objects.values()) {
         if ( objectIncludes(object, position) ) return false
-    }
-
-    for (let player of players.values()) {
-        if ( player.position.x == position.x && player.position.y == position.y ) return false
     }
 
     return true

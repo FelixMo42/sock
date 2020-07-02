@@ -7,9 +7,8 @@ import { moveCamera } from "./display/camera"
 import { mouseMoved } from "./display/mouse"
 
 import {
-	objectCreated, objectRemoved,
-	playerCreated, playerUpdated, playerRemoved,
-	isOurPlayer, getPlayer, hasPlayer
+	objectCreated, objectUpdated, objectRemoved,
+	isOurPlayer, getOurPlayer, hasOurPlayer
 } from "./lib/api"
 
 import { getMoves } from "./movesManager"
@@ -19,39 +18,14 @@ import { drawTree, drawWall } from "./art"
 // set the backgroud color
 app.renderer.backgroundColor = bgColor
 
-const center = meter / 2
 const sprites = new Map()
-
-const addSprite = (source, sprite, location=app.stage) => {
-    // add the sprite to the stage so that is will be shown
-    location.addChild(sprite)
-
-    // keep a refrence to it so we can find it again
-    sprites.set(source, sprite)
-}
-
-const removeSprite = source => {
-	console.log(source)
-	
-	// get the sprite of our interest
-	let sprite = sprites.get(source)
-
-    // remove the sprite form watever container it is in
-	sprite.parent.removeChild(sprite)
-
-    // trash are refrence to it
-    sprites.delete(source)
-}
 
 const getSprite = source => sprites.get(source)
 
 const toGlobal = n => n * meter
-const toCentered = n => n * meter + center
-
-const moveCameraToPlayer = () => moveCamera( getSprite( getPlayer() ) )
 
 const ourPlayerMoved = Event()
-on(ourPlayerMoved, () => moveCameraToPlayer)
+on(ourPlayerMoved, () => {})
 
 /*//////////*/
 /*| layers |*/
@@ -77,137 +51,158 @@ app.stage.addChild(trees)
 /*| Draw Objects |*/
 /*////////////////*/
 
+function drawSquare(w, h) {
+	return `<svg width="${w}" height="${h}"><rect width="${w}" height="${h}" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" /></svg>`
+}
+
 on(objectCreated, object => {
 	let w = toGlobal(object.width)
 	let h = toGlobal(object.height)
 
-	let x = toGlobal(object.x)
-	let y = toGlobal(object.y)
+	let sprite = new PIXI.Sprite(PIXI.Texture.WHITE)
 
-	if ( object.name == "wall" ) {
-		walls.beginFill(0x1e2021)
-		walls.drawRect(x, y, w, h)
-		walls.endFill()
+	sprite.x = toGlobal(object.position.x)
+	sprite.y = toGlobal(object.position.y)
 
-		drawWall(walls, x,y , 0,0 , w,0)
-		drawWall(walls, x,y , w,0 , w,h)
-		drawWall(walls, x,y , w,h , 0,h)
-		drawWall(walls, x,y , 0,h , 0,0)
-	}
+	sprite.width  = w
+	sprite.height = h
 
-	if ( object.name == "tree" ) {
-		drawTree(trees, x + w / 2, y + h / 2)
-	}
+	// add the sprite to the stage so that is will be shown
+	app.stage.addChild(sprite)
 
-	// addSprite(object, graphicsToSprite(sprite, toGlobal(object.x), toGlobal(object.y)))
+	// keep a refrence to it so we can find it again
+	sprites.set(object, sprite)	
 } )
 
-on(objectRemoved, object => removeSprite(object) )
+on(objectUpdated, ({object, update}) => {
+	let sprite = sprites.get(object)
 
-/*////////////////*/
-/*| draw players |*/
-/*////////////////*/
-
-on(playerCreated, player => {
-	let sprite = new PIXI.Graphics()
-
-	sprite.filters = [ new PIXI.filters.FXAAFilter() ]
-
-	// draw a circle
-	sprite.beginFill(0x333333)
-	sprite.drawCircle(0, 0, 20)
-	sprite.endFill()
-
-	// move the sprite to the right position
-	sprite.x = toCentered(player.position.x)
-	sprite.y = toCentered(player.position.y)
-
-	// if this is the player then focus on the camera on them
-	if ( isOurPlayer(player) ) {
-		moveCamera(sprite)
-	} else {
-		// give the player a name tag
-		let text = new PIXI.Text( player, {
-			fontFamily: 'Arial',
-			fontSize: 18,
-			fill: 0xd0d0d0
-		})
-
-		// center the text
-		text.anchor.x = 0.5
-
-		// move it above the sprite
-		text.y = -40
-		
-		// add it the the sprite
-		sprite.addChild(text)
-	}
-
-	addSprite(player, sprite, mains)
-} )
-
-on(playerUpdated, ({player, update}) => {
-	let sprite = getSprite(player)
-	
 	// slide that player into its new position
 	if ( "position" in update ) {
 		let anim = ease.add(sprite, {
-			x: toCentered(update.position.x),
-			y: toCentered(update.position.y)
+			x: toGlobal(update.position.x),
+			y: toGlobal(update.position.y)
 		}, {
 			duration: drawTime,
 			ease: "linear"
 		})
 
-		// if this is the main player we need to move the camera so it fallows them
-		if ( isOurPlayer(player) ) anim.on("each", () => fire(ourPlayerMoved) )
+		if ( isOurPlayer(object) ) anim.on("each", () => fire(ourPlayerMoved) )
 	}
+})
 
-	if ( "hp" in update ) {
-		//  make a colored tag showing how the players health has changed
-		let text = new PIXI.Text(update.hp - player.hp, {
-			fontFamily: 'Arial',
-			fontSize: 18,
-			fill: (update.hp > player.hp) ? 0x4ee44e : 0xff0000
-		})
+on(objectRemoved, object => {
+	// get the sprite of our interest
+	let sprite = sprites.get(object)
 
-		// center the text
-		text.anchor.x = 0.5
+    // remove the sprite form watever container it is in
+	sprite.parent.removeChild(sprite)
 
-		// position the text on top of the sprite
-		text.x = sprite.x
-		text.y = sprite.y - 20
+    // trash are refrence to it
+    sprites.delete(object)
+})
 
-		// make the text slide up
-		let anim = ease.add(text, {
-			x: text.x,
-			y: text.y - 60
-		}, {
-			duration: 750
-		})
+/*/////////////*/
+/*| old code |*/
+/*////////////*/
 
-		// make the text visable
-		app.stage.addChild(text)
+	// if ( object.name == "wall" ) {
+	// 	walls.beginFill(0x1e2021)
+	// 	walls.drawRect(x, y, w, h)
+	// 	walls.endFill()
 
-		// remove the text when the animation is complete
-		anim.on("complete", () => app.stage.removeChild(text))
-	}
-} )
+	// 	drawWall(walls, x,y , 0,0 , w,0)
+	// 	drawWall(walls, x,y , w,0 , w,h)
+	// 	drawWall(walls, x,y , w,h , 0,h)
+	// 	drawWall(walls, x,y , 0,h , 0,0)
+	// }
 
-on(playerRemoved, player => removeSprite(player) )
+	// if ( object.name == "tree" ) {
+	// 	drawTree(trees, x + w / 2, y + h / 2)
+	// }
+
+	// let sprite = new PIXI.Graphics()
+
+	// sprite.filters = [ new PIXI.filters.FXAAFilter() ]
+
+	// // draw a circle
+	// sprite.beginFill(0x333333)
+	// sprite.drawCircle(0, 0, 20)
+	// sprite.endFill()
+
+	// // move the sprite to the right position
+	// sprite.x = toCentered(player.position.x)
+	// sprite.y = toCentered(player.position.y)
+
+	// // if this is the player then focus on the camera on them
+	// if ( isOurPlayer(player) ) {
+	// 	moveCamera(sprite)
+	// } else {
+	// 	// give the player a name tag
+	// 	let text = new PIXI.Text( player, {
+	// 		fontFamily: 'Arial',
+	// 		fontSize: 18,
+	// 		fill: 0xd0d0d0
+	// 	})
+
+	// 	// center the text
+	// 	text.anchor.x = 0.5
+
+	// 	// move it above the sprite
+	// 	text.y = -40
+		
+	// 	// add it the the sprite
+	// 	sprite.addChild(text)
+	// }
+
+	// addSprite(player, sprite, mains)
+
+	
+
+	// if ( "hp" in update ) {
+	// 	//  make a colored tag showing how the players health has changed
+	// 	let text = new PIXI.Text(update.hp - player.hp, {
+	// 		fontFamily: 'Arial',
+	// 		fontSize: 18,
+	// 		fill: (update.hp > player.hp) ? 0x4ee44e : 0xff0000
+	// 	})
+
+	// 	// center the text
+	// 	text.anchor.x = 0.5
+
+	// 	// position the text on top of the sprite
+	// 	text.x = sprite.x
+	// 	text.y = sprite.y - 20
+
+	// 	// make the text slide up
+	// 	let anim = ease.add(text, {
+	// 		x: text.x,
+	// 		y: text.y - 60
+	// 	}, {
+	// 		duration: 750
+	// 	})
+
+	// 	// make the text visable
+	// 	app.stage.addChild(text)
+
+	// 	// remove the text when the animation is complete
+	// 	anim.on("complete", () => app.stage.removeChild(text))
+	// }
+
 
 /*///////////*/
 /*| draw ui |*/
 /*///////////*/
 
 app.ticker.add(() => {
-	if ( !hasPlayer() ) return
+	if ( !hasOurPlayer() ) return
+
 	moves.clear()
 	moves.lineStyle(3,0x000000)
 
 	moves.moveTo(
-		getSprite( getPlayer() ).x,
-		getSprite( getPlayer() ).y
+		getSprite( getOurPlayer() ).x,
+		getSprite( getOurPlayer() ).y
 	)
 
 	for (let move of getMoves()) {

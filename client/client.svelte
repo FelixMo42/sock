@@ -4,7 +4,7 @@
 
 	import Grapics from "./display/display.svelte"
 	import { on, when } from "eventmonger"
-	import { name, isOurPlayer, playerCreated, playerUpdateDone, playerRemoved} from "./lib/api"
+	import { name, isOurPlayer, objectCreated, objectUpdateDone, objectRemoved} from "./lib/api"
 
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
@@ -30,10 +30,10 @@
 		percentmp.set(player.mp / player.maxhp * 100)
 	})
 
-	on(playerCreated, updatePlayer)
-	on(playerUpdateDone, updatePlayer)
+	on(objectCreated, updatePlayer)
+	on(objectUpdateDone, updatePlayer)
 
-	on(playerRemoved, () => {
+	on(objectRemoved, () => {
 		percenthp.set(0)
 		percentmp.set(0)
 	})

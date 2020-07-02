@@ -8,33 +8,30 @@ import barter, { enter, leave } from "./barter"
 
 export const getDistance = (a, b) => Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 
-export const getPlayerAtPosition = (position) => {
-    for (let player of players.values()) {
-        if (player.position.x == position.x && player.position.y == position.y) return player
+export const getObjectAtPosition = (position) => {
+    for (let object of objects.values()) {
+        if (object.position.x == position.x && object.position.y == position.y) return object
     }
 }
 
+/*////////////////////////*/
+/*| our player functions |*/
+/*////////////////////////*/
+
 // check if our player exist
-export const hasPlayer = () =>  players.has(name)
+export const hasOurPlayer = () =>  objects.has(name)
 
-// get our player
-export const getPlayer = () => players.get(name)
+// get our object
+export const getOurPlayer = () => objects.get(name)
 
-// cheack if this is out player
-export const isOurPlayer = player => player == getPlayer()
-
-// define the callback for what you do on your turn
-let onTurnCallback = () => {}
-export const onTurn = (callback) => {
-    onTurnCallback = callback
-}
+// cheack if this is out object
+export const isOurPlayer = object => object.id == name
 
 /*////////////////////////*/
 /*| variables and events |*/
 /*////////////////////////*/
 
-// keep track of object and players we know about
-export const players = new Map()
+// keep track of object and objects we know about
 export const objects = new Map()
 
 // server events
@@ -46,12 +43,13 @@ export const objectCreated = Event()
 export const objectUpdated = Event()
 export const objectRemoved = Event()
 
-// player events
-export const playerCreated = Event()
-export const playerUpdated = Event()
-export const playerRemoved = Event()
+export const objectUpdateDone = Event()
 
-export const playerUpdateDone = Event()
+// define the callback for what you do on your turn
+let onTurnCallback = () => {}
+export const onTurn = (callback) => {
+    onTurnCallback = callback
+}
 
 /*///////////////////////*/
 /*| backend setup stuff |*/
@@ -88,34 +86,20 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
         objects.set(object.id, object)
         fire(objectCreated, object)
     }),
-    on("objectUpdated", object => {
-        objects.set(object.id, object)
-        fire(objectUpdated, object)
+    on("objectUpdated", update => {
+        let object = update.object = objects.get(update.object)
+
+        // tell people what parts of the object updated
+        fire(objectUpdated, update)
+
+        for (let [aspect, value] of Object.entries(update.update)) object[aspect] = value
+
+        fire(objectUpdateDone, object)
     }),
     on("objectRemoved", id => {
         fire(objectRemoved, objects.get(id))
+
         objects.delete(id)
-    }),
-
-    // player callbacks
-    on("playerCreated", player => {
-        players.set(player.id, player)
-        fire(playerCreated, player)
-    }),
-    on("playerUpdated", update => {
-        let player = update.player = players.get(update.player)
-
-        // tell people what parts of the player updated
-        fire(playerUpdated, update)
-
-        // update the player!
-        for (let [aspect, value] of Object.entries(update.update)) player[aspect] = value
-
-        fire(playerUpdateDone, player)
-    }),
-    on("playerRemoved", id => {
-        fire(playerRemoved, players.get(id))
-        players.delete(id)
     }),
     
     // outher callbaks
