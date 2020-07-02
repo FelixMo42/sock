@@ -9,10 +9,10 @@ import { mouseMoved } from "./display/mouse"
 import {
 	createObjectEvent, removeObjectEvent,
 	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
-	isOurPlayer, getPlayer, hasPlayer, players
+	isOurPlayer, getPlayer, hasPlayer
 } from "./lib/api"
 
-import { movesUpdatedEvent, getMoves } from "./movesManager"
+import { getMoves } from "./movesManager"
 import { meter, drawTime, bgColor } from "./config"
 import { drawTree, drawWall } from "./art"
 
@@ -211,8 +211,8 @@ app.ticker.add(() => {
 	for (let move of getMoves()) {
 		if ( move.action == "move" ) {
 			moves.lineTo(
-				toCentered(move.target.x),
-				toCentered(move.target.y)
+				toCentered(move.inputs[0].x),
+				toCentered(move.inputs[0].y)
 			)
 		}
 	}

@@ -31,11 +31,8 @@ export const clearMoves = effects(moves, () => moves.clear())
 let currentMove = { action: "wait" }
 onTurn(effects(moves, callback => moves.next(move => {
     currentMove = move
-    callback({
-        action: move.action,
-        source: getPlayer().id,
-        target: move.target
-    })
+    
+    callback({ source: getPlayer().id, ...move })
 })))
 
 /*/////////////////////*/
@@ -76,7 +73,7 @@ const attack = (target, action) => {
     if ( !player ) return false
 
     // add this attack to our list of moves
-    addMove({ action, target: player.id })
+    addMove({ action, inputs: [player.id] })
 
     // return news of are success
     return true
@@ -84,7 +81,7 @@ const attack = (target, action) => {
 
 const goToPoint = (target, source=getPlayer().position) => {
     // pathfind to the target location then add all the points in the path to the event queue
-    pathfind(source, target).forEach(point => addMove({action: "move", target: point}))
+    pathfind(source, target).forEach(point => addMove({action: "move", inputs: [point]}))
 }
 
 const mouseTile = () => ({
