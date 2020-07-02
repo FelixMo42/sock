@@ -8,11 +8,11 @@ const getLineCount = (path, base="") => {
         for (let name of fs.readdirSync(path)) {
             total += getLineCount(path + "/" + name, base + "\t")
         }
-        console.log(base, total, "\t", path)
+        console.log(base, total, "\t", path.split("/").pop() + "/")
         return total
     } else {
         let lineCount = fs.readFileSync(path).toString().split("\n").length 
-        console.log(base, lineCount, "\t", path)
+        console.log(base, lineCount, "\t", path.split("/").pop())
         return lineCount
     }
 }

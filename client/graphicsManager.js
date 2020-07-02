@@ -7,8 +7,8 @@ import { moveCamera } from "./display/camera"
 import { mouseMoved } from "./display/mouse"
 
 import {
-	createObjectEvent, removeObjectEvent,
-	createPlayerEvent, updatePlayerEvent, removePlayerEvent,
+	objectCreated, objectRemoved,
+	playerCreated, playerUpdated, playerRemoved,
 	isOurPlayer, getPlayer, hasPlayer
 } from "./lib/api"
 
@@ -75,7 +75,7 @@ app.stage.addChild(trees)
 /*| Draw Objects |*/
 /*////////////////*/
 
-on(createObjectEvent, object => {
+on(objectCreated, object => {
 	let w = toGlobal(object.width)
 	let h = toGlobal(object.height)
 
@@ -100,13 +100,13 @@ on(createObjectEvent, object => {
 	// addSprite(object, graphicsToSprite(sprite, toGlobal(object.x), toGlobal(object.y)))
 } )
 
-on(removeObjectEvent, object => removeSprite(object) )
+on(objectRemoved, object => removeSprite(object) )
 
 /*////////////////*/
 /*| draw players |*/
 /*////////////////*/
 
-on(createPlayerEvent, player => {
+on(playerCreated, player => {
 	let sprite = new PIXI.Graphics()
 
 	sprite.filters = [ new PIXI.filters.FXAAFilter() ]
@@ -144,7 +144,7 @@ on(createPlayerEvent, player => {
 	addSprite(player, sprite, mains)
 } )
 
-on(updatePlayerEvent, ({player, update}) => {
+on(playerUpdated, ({player, update}) => {
 	let sprite = getSprite(player)
 	
 	// slide that player into its new position
@@ -192,7 +192,7 @@ on(updatePlayerEvent, ({player, update}) => {
 	}
 } )
 
-on(removePlayerEvent, player => removeSprite(player) )
+on(playerRemoved, player => removeSprite(player) )
 
 /*///////////*/
 /*| draw ui |*/

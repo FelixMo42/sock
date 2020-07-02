@@ -13,9 +13,9 @@ import { meter } from "./config"
 // the list of moves
 const moves = new EventQueue()
 
-export const movesUpdatedEvent = Event()
+export const movesUpdated = Event()
 
-on(flag(moves), () => fire(movesUpdatedEvent, getMoves()))
+on(flag(moves), () => fire(movesUpdated, getMoves()))
 
 // a way to access all the moves
 export const getMoves = () => [

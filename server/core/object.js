@@ -2,9 +2,9 @@ import uuid from "uuid"
 import { Event, fire } from "eventmonger"
 import { objects } from "../database.js"
 
-export const createObjectEvent = Event()
-export const updateObjectEvent = Event()
-export const removeObjectEvent = Event()
+export const objectCreated = Event()
+export const objectUpdated = Event()
+export const objectRemoved = Event()
 
 export const createObject = config => {
     let object = {
@@ -22,7 +22,7 @@ export const createObject = config => {
     objects.set(object.id, object).write()
 
     // tell the world the news of the new player
-    fire(createObjectEvent, object)
+    fire(objectCreated, object)
 
     return object
 }

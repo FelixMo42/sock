@@ -42,14 +42,14 @@ export const enterServerEvent = Event()
 export const leaveServerEvent = Event()
 
 // object events
-export const createObjectEvent = Event()
-export const updateObjectEvent = Event()
-export const removeObjectEvent = Event()
+export const objectCreated = Event()
+export const objectUpdated = Event()
+export const objectRemoved = Event()
 
 // player events
-export const createPlayerEvent = Event()
-export const updatePlayerEvent = Event()
-export const removePlayerEvent = Event()
+export const playerCreated = Event()
+export const playerUpdated = Event()
+export const playerRemoved = Event()
 
 export const playerUpdateDone = Event()
 
@@ -84,37 +84,37 @@ export const emit = barter(`ws://127.0.0.1:4242?$ids@=${name}`, on => [
     on(leave, () => fire(leaveServerEvent)),
 
     // object callbacks
-    on("createObjectEvent", object => {
+    on("objectCreated", object => {
         objects.set(object.id, object)
-        fire(createObjectEvent, object)
+        fire(objectCreated, object)
     }),
-    on("updateObjectEvent", object => {
+    on("objectUpdated", object => {
         objects.set(object.id, object)
-        fire(updateObjectEvent, object)
+        fire(objectUpdated, object)
     }),
-    on("removeObjectEvent", id => {
-        fire(removeObjectEvent, objects.get(id))
+    on("objectRemoved", id => {
+        fire(objectRemoved, objects.get(id))
         objects.delete(id)
     }),
 
     // player callbacks
-    on("createPlayerEvent", player => {
+    on("playerCreated", player => {
         players.set(player.id, player)
-        fire(createPlayerEvent, player)
+        fire(playerCreated, player)
     }),
-    on("updatePlayerEvent", update => {
+    on("playerUpdated", update => {
         let player = update.player = players.get(update.player)
 
         // tell people what parts of the player updated
-        fire(updatePlayerEvent, update)
+        fire(playerUpdated, update)
 
         // update the player!
         for (let [aspect, value] of Object.entries(update.update)) player[aspect] = value
 
         fire(playerUpdateDone, player)
     }),
-    on("removePlayerEvent", id => {
-        fire(removePlayerEvent, players.get(id))
+    on("playerRemoved", id => {
+        fire(playerRemoved, players.get(id))
         players.delete(id)
     }),
     

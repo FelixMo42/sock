@@ -4,11 +4,11 @@ import { createServer } from "http"
 import { isEmptyPosition, wait, random } from "./util.js"
 import barter, { enter, leave, reply } from "./barter.js"
 import {
-    createPlayer, updatePlayer, removePlayer,
-    createPlayerEvent, updatePlayerEvent, removePlayerEvent,
+    createPlayer, updatePlayer,
+    playerCreated, playerUpdated, playerRemoved,
     getPlayer, getPlayers, hasPlayer
 } from "./core/player.js"
-import { createObjectEvent, updateObjectEvent, removeObjectEvent, getObject, getObjects } from "./core/object.js"
+import { objectCreated, objectUpdated, objectRemoved, getObjects } from "./core/object.js"
 import { getAction, applyAction } from "./core/action.js"
 
 // the min and max time for how long player have to select moves
@@ -75,13 +75,13 @@ const play = async () => {
 /*| socket maintnace |*/
 /*////////////////////*/
 
-on(createPlayerEvent, player => emit("createPlayerEvent", player))
-on(updatePlayerEvent, update => emit("updatePlayerEvent", update))
-on(removePlayerEvent, player => emit("removePlayerEvent", player))
+on(playerCreated, player => emit("playerCreated", player))
+on(playerUpdated, update => emit("playerUpdated", update))
+on(playerRemoved, player => emit("playerRemoved", player))
 
-on(createObjectEvent, object => emit("createObjectEvent", object))
-on(updateObjectEvent, update => emit("updateObjectEvent", update))
-on(removeObjectEvent, object => emit("removeObjectEvent", object))
+on(objectCreated, object => emit("objectCreated", object))
+on(objectUpdated, update => emit("objectUpdated", update))
+on(objectRemoved, object => emit("objectRemoved", object))
 
 const spawnPlayer = id => {
     //  get a postion in the spawn box
@@ -101,10 +101,10 @@ const spawnPlayer = id => {
 
 const addClient = (client, {ids}) => {
     // tell the new client of all the objects in the world
-    for (let object of getObjects()) client("createObjectEvent", object)
+    for (let object of getObjects()) client("objectCreated", object)
 
     // tell the new client of all the players in the server
-    for (let player of getPlayers()) client("createPlayerEvent", player)
+    for (let player of getPlayers()) client("playerCreated", player)
 
     // make sure we have all the players the agent wants
     for (let id of ids)  if ( !hasPlayer(id) ) spawnPlayer(id)

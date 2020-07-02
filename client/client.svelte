@@ -4,7 +4,7 @@
 
 	import Grapics from "./display/display.svelte"
 	import { on, when } from "eventmonger"
-	import { name, isOurPlayer, createPlayerEvent, playerUpdateDone} from "./lib/api"
+	import { name, isOurPlayer, playerCreated, playerUpdateDone} from "./lib/api"
 
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
@@ -30,7 +30,7 @@
 		percentmp.set(player.mp / player.maxhp * 100)
 	})
 
-	on(createPlayerEvent, updatePlayer)
+	on(playerCreated, updatePlayer)
 	on(playerUpdateDone, updatePlayer)
 </script>
 
