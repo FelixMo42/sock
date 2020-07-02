@@ -30,7 +30,7 @@ export const createPlayer = config => {
     players.set(player.id, player).write()
 
     // tell the world the news of the new player
-    fire(createPlayerEvent, player.id)
+    fire(createPlayerEvent, player)
 
     return player
 }
@@ -45,7 +45,7 @@ export const removePlayer = player => {
 
 export const getPlayer = id => players.get(id).value()
 
-export const hasPlayer = id => players.has(id)
+export const hasPlayer = id => players.has(id).value()
 
 export const getPlayers = () => players.values()
 
@@ -86,7 +86,7 @@ export const removeObject = object => {
 
 export const getObject = id => objects.get(id).value()
 
-export const hasObject = id => objects.has(id)
+export const hasObject = id => objects.has(id).value()
 
 export const getObjects = () => objects.values()
 
@@ -96,6 +96,6 @@ export const getObjects = () => objects.values()
 
 export const getAction = id => actions.get(id).value()
 
-export const hasAction = id => actions.has(id)
+export const hasAction = id => actions.has(id).value()
 
 export const getActions = () => actions.values()

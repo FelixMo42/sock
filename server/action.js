@@ -1,7 +1,7 @@
 import { fire }  from "eventmonger"
 import { effects } from "./effect.js"
 import { updatePlayerEvent, getPlayer, hasPlayer, setPlayer } from "./manager.js"
-import { getDistance } from "./util.js"
+import { inRange } from "./util.js"
 
 /**
  * @typedef Action
@@ -22,13 +22,13 @@ export const isValidInput = (source, input, expect) => {
 
         let player = getPlayer(input)
 
-        return getDistance(source.position, player.position) <= expect.range
+        return inRange(source.position, player.position, expect.range)
     }
 
     if (expect.type == "vector") {
-        if ( !("x" in input && !"y" in input) ) return false
+        if ( !("x" in input && "y" in input) ) return false
 
-        return getDistance(source.position, input) <= expect.range
+        return inRange(source.position, input, expect.range)
     }
 
     console.error(`unkown input type ${expect.type}`)
@@ -57,6 +57,8 @@ const getInput = (action, inputs, i) => {
 }
 
 const Resolver = (action, source, inputs) => (request) => {
+    if ( typeof request !== "string" ) return request
+
     let path = request.split(".")
 
     if ( path[0] == "source" ) return source
@@ -77,10 +79,10 @@ export const applyAction = (action, source, inputs, changes) => {
 
     let target = resolve( action.targets )
 
-    for (let effect of action.effects) applyEffect(effect, target, changes)
+    for (let [effect, value] of action.effects) applyEffect(effect, resolve(value), target, changes)
 }
 
-export const applyEffect = ([effect, value], target, changes) => {
+export const applyEffect = (effect, value, target, changes) => {
     effects.get(effect).apply(target, value).forEach(change => applyChange(target, change, changes))
 }
 

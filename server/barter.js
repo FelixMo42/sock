@@ -52,8 +52,6 @@ export default (server, events) => {
 
         handle(enter, emit, urlon.parse(request.url.substr(2)))
 
-        client.isAlive = true
-
         client.on("message", message => {
             let [type, event, ...params] = message.split("\n")
 
@@ -72,25 +70,10 @@ export default (server, events) => {
             // tell all callbacks that is closed
             answer.forEach(handle => handle(leave, emit))
         })
-
-        client.on("pong", () => {
-            client.isAlive = true
-        })
     })
 
     // log that the socket has closed
     socket.on("close", () => console.log("websocket closed"))
-
-    setInterval(() => {
-        socket.clients.forEach(client => {
-            if (client.readyState == ws.OPEN) {
-                if (client.isAlive == false) return client.terminate()
-
-                client.isAlive = true
-                client.ping(() => {})
-            }
-        })
-    })
 
     const emit = (event, ...params) => {
         let message = `${question}\n${event}${params.map(stringify)}`

@@ -76,11 +76,11 @@ const play = async () => {
 /*| socket maintnace |*/
 /*////////////////////*/
 
-on(createPlayerEvent, player => emit("createPlayerEvent", getPlayer(player)))
+on(createPlayerEvent, player => emit("createPlayerEvent", player))
 on(updatePlayerEvent, update => emit("updatePlayerEvent", update))
 on(removePlayerEvent, player => emit("removePlayerEvent", player))
 
-on(createObjectEvent, object => emit("createObjectEvent", getObject(object)))
+on(createObjectEvent, object => emit("createObjectEvent", object))
 on(updateObjectEvent, update => emit("updateObjectEvent", update))
 on(removeObjectEvent, object => emit("removeObjectEvent", object))
 
@@ -108,7 +108,7 @@ const addClient = (client, {ids}) => {
     for (let player of getPlayers()) client("createPlayerEvent", player)
 
     // make sure we have all the players the agent wants
-    for (let id of ids) if ( !hasPlayer(id) ) spawnPlayer(id)
+    for (let id of ids)  if ( !hasPlayer(id) ) spawnPlayer(id)
 }
 
 // set up express app
