@@ -1,7 +1,7 @@
 import { inRange } from "../util.js"
 import { actions } from "../database.js"
 import { applyEffect } from "./effect.js"
-import { getPlayer, hasPlayer } from "./player.js"
+import { getObject, hasObject } from "./object.js"
 
 /**
  * @typedef Action
@@ -12,9 +12,9 @@ import { getPlayer, hasPlayer } from "./player.js"
  * @property {*} effects
  */
 
-/*////////////////////*/
-/*| action functions |*/
-/*////////////////////*/
+/*//////////////////////*/
+/*| database functions |*/
+/*//////////////////////*/
 
 export const getAction = id => actions.get(id).value()
 
@@ -27,12 +27,12 @@ export const getActions = () => actions.values()
 /*///////////////////////////*/
 
 export const isValidInput = (source, input, expect) => {
-    if (expect.type == "player") {
-        if ( !hasPlayer(input) ) return false
+    if (expect.type == "object") {
+        if ( !hasObject(input) ) return false
 
-        let player = getPlayer(input)
+        let object = getObject(input)
 
-        return inRange(source.position, player.position, expect.range)
+        return inRange(source.position, object.position, expect.range)
     }
 
     if (expect.type == "vector") {
@@ -63,7 +63,7 @@ const getInput = (action, inputs, i) => {
 
     if (expect.type == "vector") return inputs[i]
 
-    if (expect.type == "player") return getPlayer(inputs[i])
+    if (expect.type == "object") return getObject(inputs[i])
 }
 
 const Resolver = (action, source, inputs) => (request) => {

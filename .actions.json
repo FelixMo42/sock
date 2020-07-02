@@ -27,7 +27,7 @@
         "name": "slice",
         
         "expects": [{
-            "type": "player",
+            "type": "agent",
             "range": 1
         }],
 
@@ -42,7 +42,7 @@
         "name": "shoot",
 
         "expects": [{
-            "type": "player",
+            "type": "agent",
             "range": 9
         }],
 
@@ -57,7 +57,7 @@
         "name": "heal",
 
         "expects": [{
-            "type": "player",
+            "type": "agent",
             "range": 1
         }],
 

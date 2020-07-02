@@ -4,14 +4,13 @@ import { createServer } from "http"
 import { isEmptyPosition, wait, random } from "./util.js"
 import barter, { enter, leave, reply } from "./barter.js"
 import {
-    createPlayer, updatePlayer,
-    playerCreated, playerUpdated, playerRemoved,
-    getPlayer, getPlayers, hasPlayer
-} from "./core/player.js"
-import { objectCreated, objectUpdated, objectRemoved, getObjects } from "./core/object.js"
+    createObject, updateObject,
+    objectCreated, objectUpdated, objectRemoved,
+    getObject, getObjects, hasObject
+} from "./core/object.js"
 import { getAction, applyAction } from "./core/action.js"
 
-// the min and max time for how long player have to select moves
+// the min and max time for how long object have to select moves
 const minTime = 500
 const maxTime = 1000
 
@@ -19,7 +18,7 @@ const maxTime = 1000
 /*| core loop managment |*/
 /*///////////////////////*/
 
-const doPlayerMoves = () => new Promise(done => {
+const doObjectMoves = () => new Promise(done => {
     let responses = new Set()
     let changes   = new Map()
 
@@ -31,7 +30,7 @@ const doPlayerMoves = () => new Promise(done => {
             // welp, one less response we need to wait for
             numSent -= 1
 
-            // there are no more connected agents, so were done
+            // there are no more connected clients, so were done
             if (numSent == 0) done(changes)
         } ),
 
@@ -39,10 +38,10 @@ const doPlayerMoves = () => new Promise(done => {
             // mark that weve recived this clients response
             responses.add( client )
 
-            // bind the move to the agent the client is acting for
+            // bind the move to the client the client is acting for
             applyAction(
                 getAction( move.action ),
-                getPlayer( move.source ),
+                getObject( move.source ),
                 move.inputs,
                 changes
             )
@@ -57,13 +56,13 @@ const doPlayerMoves = () => new Promise(done => {
 })
 
 const tick = async () => {
-    // ask the players what they want to do
+    // ask the objects what they want to do
     let delay = wait(minTime)
-    let changes = await doPlayerMoves()
+    let changes = await doObjectMoves()
     await delay
 
-    // change the players
-    changes.forEach(updatePlayer)
+    // change the objects
+    changes.forEach(updateObject)
 }
 
 const play = async () => {
@@ -75,10 +74,6 @@ const play = async () => {
 /*| socket maintnace |*/
 /*////////////////////*/
 
-on(playerCreated, player => emit("playerCreated", player))
-on(playerUpdated, update => emit("playerUpdated", update))
-on(playerRemoved, player => emit("playerRemoved", player.id))
-
 on(objectCreated, object => emit("objectCreated", object))
 on(objectUpdated, update => emit("objectUpdated", update))
 on(objectRemoved, object => emit("objectRemoved", object.id))
@@ -88,26 +83,18 @@ const spawnPlayer = id => {
     let position = { x: random(1, 5), y: random(1, 5) }
 
     // make sure the postion is clear, if not regenerate it
-    while ( !isEmptyPosition(position) )
-        position = { x: random(1, 5), y: random(1, 5) }
+    while ( !isEmptyPosition(position) ) position = { x: random(1, 5), y: random(1, 5) }
 
-    // make the player
-    return createPlayer({
-        id, position,
-        hp: 100, maxhp: 100,
-        mp: 100, maxmp: 100
-    })
+    // make the object
+    return createObject({ id, position, type: "player" })
 }
 
 const addClient = (client, {ids}) => {
     // tell the new client of all the objects in the world
     for (let object of getObjects()) client("objectCreated", object)
 
-    // tell the new client of all the players in the server
-    for (let player of getPlayers()) client("playerCreated", player)
-
-    // make sure we have all the players the agent wants
-    for (let id of ids)  if ( !hasPlayer(id) ) spawnPlayer(id)
+    // make sure we have all the objects the client wants
+    for (let id of ids)  if ( !hasObject(id) ) spawnPlayer(id)
 }
 
 // set up express app

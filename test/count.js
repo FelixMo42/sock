@@ -19,6 +19,8 @@ const getLineCount = (path, base="") => {
 
 let total =
     getLineCount("client") +
-    getLineCount("server")
+    getLineCount("server") + 
+    getLineCount(".actions.json") +
+    0
 
 console.log("\ntotal: ", total, "\n")

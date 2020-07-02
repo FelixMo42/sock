@@ -1,14 +1,13 @@
 import { isEmptyPosition } from "./util.js"
 import { Effect } from "./core/effect.js"
 import { Aspect, Number, Vector } from "./core/aspect.js"
-import { removePlayer } from "./core/player.js"
 
 /*//////////////////////*/
 /*| add health + death |*/
 /*///////////////////////*/
 
-const health = Aspect("hp" , Number, (player, hp, dead) => {
-    hp = Math.min(hp, player.maxhp)
+const health = Aspect("hp" , Number, (object, hp, dead) => {
+    hp = Math.min(hp, object.maxhp)
 
     // were out of health, and therefore dead
     if (hp <= 0) dead()
@@ -16,22 +15,22 @@ const health = Aspect("hp" , Number, (player, hp, dead) => {
     return hp
 })
 
-Effect("damage" , (player, value)  => [[health, value]])
+Effect("damage" , (object, value)  => [[health, value]])
 
 /*////////////////*/
 /*| add movement |*/
 /*////////////////*/
 
-const position = Aspect("position" , Vector, (player, target) => {
+const position = Aspect("position" , Vector, (object, target) => {
     if ( isEmptyPosition( target ) ) return target
 
-    return player.position
+    return object.position
 })
 
-Effect("move"   , (player, target) => [[position, Vector.sub(target, player.position)]])
+Effect("move"   , (object, target) => [[position, Vector.sub(target, object.position)]])
 
 /*/////////////*/
 /*| add magic |*/
 /*/////////////*/
 
-const mana = Aspect("mp" , Number, (player, mp) => Math.min(mp, player.maxmp))
+const mana = Aspect("mp" , Number, (object, mp) => Math.min(mp, object.maxmp))
