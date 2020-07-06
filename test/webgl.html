@@ -1,0 +1,134 @@
+<canvas id="canvas" style="width: 500px; height: 500px;"></canvas>
+
+<script src="boilerplate.js"></script>
+
+<script>
+    const vs = `#version 300 es
+        // the size of the screen
+        uniform vec2 u_resolution;
+
+        // an attribute is an input (in) to a vertex shader
+        in vec2 a_position;
+        in vec2 a_texcoord;
+
+        // a varying to pass the texture coordinates to the fragment shader
+        out vec2 v_texcoord;
+
+        void main() {
+            // convert the position from pixels to -1.0 to 1.0 (clip space)
+            vec2 clipSpace = a_position / u_resolution;
+
+            // set the location of the vertex in 3d space
+            gl_Position = vec4(clipSpace, 0, 1);
+
+            // pass the texcoord to the fragment shader.
+            v_texcoord = a_texcoord;
+        }
+    `
+
+    const fs = `#version 300 es
+        precision highp float;
+
+        // the texture
+        uniform sampler2D u_texture;
+
+        // passed in from the vertex shader
+        in vec2 v_texcoord;
+
+        // the output color of this spot
+        out vec4 outColor;
+
+        void main() {
+            outColor = texture(u_texture, v_texcoord);
+        }
+    `
+
+    // get the webgl context
+    const gl = document.getElementById("canvas").getContext("webgl2")
+
+    // create a programe out of the shaders we want to use
+    const program = createProgram(gl, vs, fs)
+
+    // get the location in the program of the variables in it
+    const positionAttributeLocation = gl.getAttribLocation(program, "a_position")
+    const texcoordAttributeLocation = gl.getAttribLocation(program, "a_texcoord")
+    const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution")
+
+    // the vertices
+    const rect = (x, y, w, h) => [
+        x, y,
+        x + w, y,
+        x + w, y + h,
+
+        x, y,
+        x, y + h,
+        x + w, y + h,
+    ]
+    const positions = rect(-100, -100, 200, 200)
+
+    const vao = gl.createVertexArray()
+
+    gl.bindVertexArray(vao)
+
+    // set up the attributes that are passed to the vertex shader
+    initAttribute(gl, positionAttributeLocation, new Float32Array(positions))
+    initAttribute(gl, texcoordAttributeLocation, new Float32Array([
+        1, 1,
+        0, 1,
+        0, 0,
+
+        1, 1,
+        1, 0,
+        0, 0,
+    ]))
+
+    // Create a texture.
+    var texture = gl.createTexture()
+
+    // use texture unit 0
+    gl.activeTexture(gl.TEXTURE0 + 0)
+
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    
+    // Fill the texture with a 1x1 blue pixel.
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]))
+    
+    // Asynchronously load an image
+    var image = new Image()
+    image.src = "texture.png"
+    image.addEventListener('load', function() {
+        // Now that the image has loaded make copy it to the texture.
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image)
+        gl.generateMipmap(gl.TEXTURE_2D)
+    })
+
+    function drawScene() {
+        resizeGlCanvas(gl)
+
+        // clear the canvas
+        gl.clearColor(0, 0, 0, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+
+        // tell it to use our program (pair of shaders)
+        gl.useProgram(program)
+
+        // bind the attributes/buffer set we want
+        gl.bindVertexArray(vao)
+
+        // pass in the canvas resolution so we can convert from
+        // pixels to clipspace in the shader
+        gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
+
+        // draw the shape
+        const primitiveType = gl.TRIANGLES
+        const offset = 0
+        const count = positions.length / 2
+        gl.drawArrays(primitiveType, offset, count)
+        
+        //redraw
+        requestAnimationFrame(drawScene)
+    }
+
+    drawScene()
+</script>
