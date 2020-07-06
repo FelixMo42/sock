@@ -3,43 +3,39 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.0/pixi.min.js"></script>
     <script src="/test/art.js"></script>
+    <script src="/test/svg.js"></script>
+
+    <div style="padding: 10px; outline: auto;" id="abc"></div>
 
     <script>
-        const width = 750
-        const height = 750
-        const app = new PIXI.Application({
-            width, height,
-            
-        })
-        document.getElementById("body").appendChild(app.view)
+        // const width  = 750
+        // const height = 750
+        // const app = new PIXI.Application({ width, height })
+        // document.getElementById("body").appendChild(app.view)
 
-        // set the backgroud color
-        app.renderer.backgroundColor = 0x5F9A62
+        // // set the backgroud color
+        // app.renderer.backgroundColor = 0x5F9A62
 
-        let graphics = new PIXI.Graphics()
-        graphics.lineStyle(3, 0x000000, 1.0)
+        // drawSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 100 100">
+        //     ${ path([
+        //         moveTo(-10, -10),
+        //         bezierCurveTo(20,20 , 40,20 , 50,10)
+        //     ]) }
+        // </svg>`)
 
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
 
-        // graphics.beginFill(0x1e2021)
-		// graphics.drawCircle(0, 0, 100)
-		// graphics.endFill()
-        drawTree(graphics, 0, 0)
+        let el = document.createElementNS("http://www.w3.org/2000/svg", "path")
+        el.setAttribute("d", "M -10 -10 C 20 20, 40 20, 50 10")
+        el.setAttribute("stroke", "black")
+        el.setAttribute("fill", "transparent")
 
-        const textureToSprite = (graphics, x, y) => {
-            let bounds = graphics.getLocalBounds()
+        svg.append(el)
 
-            console.log(bounds)
+        document.getElementById("abc").appendChild(svg)
 
-            let texture = app.renderer.generateTexture(graphics)
+        var rectBBox = svg.getBBox()
 
-            let sprite = new PIXI.Sprite(texture)
-
-            sprite.x = x + bounds.x
-            sprite.y = y + bounds.y
-
-            app.stage.addChild(sprite)
-        }
-
-        textureToSprite(graphics, 200, 200)
+        console.log(rectBBox)
     </script>
 </body>

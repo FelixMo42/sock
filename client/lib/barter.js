@@ -32,8 +32,7 @@ export default (url, events, context) => {
     }
 
     const parse = param => {
-        if (param[0] == "#")
-            return (...params) => socket.send(`${response}\n${param}${params.map(stringify)}`)
+        if (param[0] == "#") return (...params) => socket.send(`${response}\n${param}${params.map(stringify)}`)
 
         try {
             return JSON.parse(param)

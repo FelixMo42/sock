@@ -64,7 +64,7 @@ export function drawBrick(map, x, y, angle, length, width, color=0xA3AC99) {
 
 }
 
-export function drawWall(map, bx , by , x1, y1, x2, y2) {
+export function drawWall(map, x1,y1 , x2,y2 , bx=0,by=0) {
     let width = range(10, 14)
     let length = range(30, 50)
 
