@@ -34,9 +34,11 @@ on(ourPlayerMoved, () => { })
 const addLayer = () => app.stage.addChild(new PIXI.Container())
 
 const layers = {
-	players: addLayer(),
-	walls: addLayer(),
-	trees: addLayer()
+	underlay: addLayer(),
+	player:   addLayer(),
+	wall:     addLayer(),
+	tree:     addLayer(),
+	overlay:  addLayer(),
 }
 
 /*////////////*/
@@ -53,7 +55,7 @@ const addPlayer = (sprite, w, h, player) => {
 		moveCamera(sprite)
 	} else {
 		// give the player a name tag
-		let text = new PIXI.Text(player, {
+		let text = new PIXI.Text(player.id, {
 			fontFamily: 'Arial',
 			fontSize: 18,
 			fill: 0xd0d0d0
@@ -63,7 +65,8 @@ const addPlayer = (sprite, w, h, player) => {
 		text.anchor.x = 0.5
 
 		// move it above the sprite
-		text.y = -40
+		text.x = w / 2
+		text.y = -15
 
 		// add it the the sprite
 		sprite.addChild(text)
@@ -90,18 +93,20 @@ const addWall = (sprite, w, h) => {
 /*////////////////*/
 
 on(objectCreated, object => {
-	let container = new PIXI.Graphics()
+	let sprite = new PIXI.Graphics()
+
+	sprite.lineStyle(3, 0x000000)
 
 	// move it the right position
 	sprite.x = toGlobal(object.position.x)
 	sprite.y = toGlobal(object.position.y)
 
-	let w = toGlobal(object.width)
-	let h = toGlobal(object.height)
+	let w = sprite.w = toGlobal(object.width)
+	let h = sprite.h = toGlobal(object.height)
 
-	if (object.type == "player") addPlayer(container, w, h, object)
-	if (object.type == "tree") addTree(container, w, h, object)
-	if (object.type == "wall") addWall(container, w, h, object)
+	if (object.type == "player") addPlayer(sprite, w, h, object)
+	if (object.type == "tree")   addTree(sprite, w, h, object)
+	if (object.type == "wall")   addWall(sprite, w, h, object)
 
 	// add the sprite to the right layer
 	layers[object.type].addChild(sprite)
@@ -173,22 +178,26 @@ on(objectRemoved, object => {
 /*| draw ui |*/
 /*///////////*/
 
+let moves = layers.underlay.addChild(new PIXI.Graphics())
+
 app.ticker.add(() => {
 	if (!hasOurPlayer()) return
 
 	moves.clear()
 	moves.lineStyle(3, 0x000000)
 
+	let sprite = getSprite(getOurPlayer())
+
 	moves.moveTo(
-		getSprite(getOurPlayer()).x,
-		getSprite(getOurPlayer()).y
+		sprite.x + sprite.w / 2,
+		sprite.y + sprite.h / 2
 	)
 
 	for (let move of getMoves()) {
 		if (move.action == "move") {
 			moves.lineTo(
-				toCentered(move.inputs[0].x),
-				toCentered(move.inputs[0].y)
+				toGlobal(move.inputs[0].x) + sprite.w / 2,
+				toGlobal(move.inputs[0].y) + sprite.h / 2
 			)
 		}
 	}
@@ -196,10 +205,9 @@ app.ticker.add(() => {
 	app.renderer.render(moves)
 })
 
-let cursor = new PIXI.Graphics()
+let cursor = layers.overlay.addChild(new PIXI.Graphics())
 cursor.lineStyle(2, 0x001100)
 cursor.drawRoundedRect(0, 0, meter, meter, 10, 10)
-app.stage.addChild(cursor)
 
 on(mouseMoved, ({ x, y }) => {
 	cursor.x = Math.floor(x / meter) * meter

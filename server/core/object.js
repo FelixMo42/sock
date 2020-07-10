@@ -65,5 +65,5 @@ export const removeObject = object => {
 
 export const getObject = id => objects.get(id).value()
 export const hasObject = id => objects.has(id).value()
-export const getObjects = () => objects.values()
+export const getObjects = () => objects.values().value()
 export const setObject = (object, aspect, value) => objects.get(object.id).set(aspect.name, value).write()

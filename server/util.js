@@ -10,4 +10,4 @@ export const objectIncludes = (object, {x, y}) =>
     x >= object.position.x && x < object.position.x + object.width &&
     y >= object.position.y && y < object.position.y + object.height
 
-export const isEmptyPosition = position => getObjects().each( object => !objectIncludes(object, position) )
+export const isEmptyPosition = position => getObjects().every( object => !objectIncludes(object, position) )

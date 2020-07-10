@@ -2,15 +2,15 @@ import commander from 'commander'
 import { isEmptyPosition, random } from "./util.js"
 import { createObject } from "./core/object.js"
 
-let size = 50
+let size = 25
 
 const generateNewMap = () => {
-    for (let i = 0; i < 50; i++) createWall(
+    for (let i = 0; i < 30; i++) createWall(
         random(-size, +size), random(-size, +size),
         random(1, 10), random(1, 10)
     )
 
-    for (let i = 0; i < 300; i++) createTree( random(-size, +size), random(-size, +size) )
+    for (let i = 0; i < 100; i++) createTree( random(-size, +size), random(-size, +size) )
 }
 
 const createWall = (x, y, width, height) => createObjectIfSpotAvailabe("wall", x, y, width, height)
@@ -23,7 +23,7 @@ const createObjectIfSpotAvailabe = (type, x, y, width, height) => {
         }
     }
 
-    return createObject({type, x, y, width, height})
+    return createObject({type, position: {x, y}, width, height})
 }
 
 /*/////////////*/
@@ -31,7 +31,6 @@ const createObjectIfSpotAvailabe = (type, x, y, width, height) => {
 /*/////////////*/
 
 commander.program.version('1.0.0')
-commander.program.command('clear').action(clear)
 commander.program.command('generate').action(generateNewMap)
 
 console.log("")

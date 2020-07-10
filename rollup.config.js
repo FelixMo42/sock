@@ -15,7 +15,7 @@ export default {
 		name: 'app',
 		file: 'public/build/bundle.js'
 	},
-	watch: { clearScreen: false },
+	watch: { clearScreen: true },
 	plugins: [
 		// compile the svelte
 		svelte({
@@ -52,18 +52,18 @@ export default {
 }
 
 function server() {
-	let started = false;
+	let started = false
 
 	return {
 		writeBundle() {
 			if (!started) {
-				started = true;
+				started = true
 
 				require('child_process').spawn('npm', ['run', 'dev:server'], {
 					stdio: ['ignore', 'inherit', 'inherit'],
 					shell: true
-				});
+				})
 			}
 		}
-	};
+	}
 }
