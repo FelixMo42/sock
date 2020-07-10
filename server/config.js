@@ -1,12 +1,17 @@
-import { isEmptyPosition } from "./util.js"
+import { isWalkable } from "./util.js"
 import { Effect } from "./core/effect.js"
-import { Aspect, Number, Vector } from "./core/aspect.js"
+import { Aspect, Number, Vector, Boolean } from "./core/aspect.js"
+
+const notSetable = () => {
+    console.error("not settable")
+    return []
+}
 
 /*//////////////////////*/
 /*| add health + death |*/
-/*///////////////////////*/
+/*//////////////////////*/
 
-const health = Aspect("hp" , Number, (object, hp, dead) => {
+export const health = Aspect("hp" , Number, (object, hp, dead) => {
     hp = Math.min(hp, object.maxhp)
 
     // were out of health, and therefore dead
@@ -21,16 +26,18 @@ Effect("damage" , (object, value)  => [[health, value]])
 /*| add movement |*/
 /*////////////////*/
 
-const position = Aspect("position" , Vector, (object, target) => {
-    if ( isEmptyPosition( target ) ) return target
+export const walkable = Aspect("walkable", Boolean, notSetable)
+
+export const position = Aspect("position" , Vector, (object, target) => {
+    if ( isWalkable( target ) ) return target
 
     return object.position
 })
 
-Effect("move"   , (object, target) => [[position, Vector.sub(target, object.position)]])
+Effect("move" , (object, target) => [[position, Vector.sub(target, object.position)]])
 
 /*/////////////*/
 /*| add magic |*/
 /*/////////////*/
 
-const mana = Aspect("mp" , Number, (object, mp) => Math.min(mp, object.maxmp))
+export const mana = Aspect("mp" , Number, (object, mp) => Math.min(mp, object.maxmp))

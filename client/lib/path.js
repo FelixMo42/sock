@@ -11,7 +11,7 @@ const objectIncludes = (object, {x, y}) =>
 
 const isWalkable = position => {
     for (let object of objects.values()) {
-        if ( objectIncludes(object, position) ) return false
+        if ( !object.walkable && objectIncludes(object, position) ) return false
     }
 
     return true

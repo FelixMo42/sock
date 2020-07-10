@@ -11,3 +11,11 @@ export const objectIncludes = (object, {x, y}) =>
     y >= object.position.y && y < object.position.y + object.height
 
 export const isEmptyPosition = position => getObjects().every( object => !objectIncludes(object, position) )
+
+export const isWalkable = position => {
+    for (let object of getObjects()) {
+        if ( !object.walkable && objectIncludes(object, position) ) return false
+    }
+
+    return true
+}

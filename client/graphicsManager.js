@@ -1,4 +1,4 @@
-import { Event, on, fire } from 'eventmonger'
+import { on } from 'eventmonger'
 import * as PIXI from 'pixi.js'
 import { ease } from 'pixi-ease'
 
@@ -23,9 +23,6 @@ const sprites = new Map()
 const getSprite = source => sprites.get(source)
 
 const toGlobal = n => n * meter
-
-const ourPlayerMoved = Event()
-on(ourPlayerMoved, () => { })
 
 /*//////////*/
 /*| layers |*/
@@ -83,8 +80,8 @@ const addWall = (sprite, w, h) => {
 	sprite.endFill()
 
 	drawWall(sprite, 0, 0, w, 0)
-	drawWall(sprite, w, 0, w, h)
 	drawWall(sprite, w, h, 0, h)
+	drawWall(sprite, w, 0, w, h)
 	drawWall(sprite, 0, h, 0, 0)
 }
 
@@ -128,7 +125,7 @@ on(objectUpdated, ({ object, update }) => {
 			ease: "linear"
 		})
 
-		if (isOurPlayer(object)) anim.on("each", () => fire(ourPlayerMoved))
+		if (isOurPlayer(object)) anim.on("each", () => moveCamera(sprite))
 	}
 
 	// show that the hp has updated
@@ -159,7 +156,7 @@ on(objectUpdated, ({ object, update }) => {
 		app.stage.addChild(text)
 
 		// remove the text when the animation is complete
-		anim.on("complete", () => app.stage.removeChild(text))
+		anim.once("complete", () => app.stage.removeChild(text))
 	}
 })
 
