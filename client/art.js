@@ -117,6 +117,43 @@ export function drawGround(map, x, y) {
     
 }
 
+export function drawLine(g, x1, y1, x2, y2, {off=1, segs=4}={}) {
+    let offset = range(-off, off)
+
+    for (let seg = 0; seg <= segs; seg++) {
+        g.lineTo(
+            interpolate(seg/segs, x1, x2) + offset(),
+            interpolate(seg/segs, y1, y2) + offset()
+        )
+    }
+}
+
+export function drawPlank(g, x, y, w, h) {
+    g.beginFill(0x946c5d)
+
+    g.moveTo(x, y)
+
+    drawLine(g, x, y, w, y)
+    drawLine(g, w, y, w, h)
+    drawLine(g, w, h, x, h)
+    drawLine(g, x, h, x, y)
+
+    g.lineTo(x, y)
+
+    g.endFill()
+}
+
+export  function drawPlanks(g, bx, by) {
+    for (let i of [0, 2, 1]) {
+        let x = bx + range(5, 10)() + 5 * (i % 2)
+        let y = by + range(10, 15)() * i + 10
+        let w = x + range(35, 45)()
+        let h = y + range(15, 10)()
+
+        drawPlank(g, x, y, w, h)
+    }
+}
+
 // some model images:
 // https://i.imgur.com/psz9k4b.jpg
 // https://66.media.tumblr.com/4f6da4eff95ea505e9587092def0109b/677bae12f0710519-df/s2048x3072/b6fb01e4707249886fbe9ab55f36c96296484d9e.jpg

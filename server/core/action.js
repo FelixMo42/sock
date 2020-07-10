@@ -20,7 +20,7 @@ export const getAction = id => actions.get(id).value()
 
 export const hasAction = id => actions.has(id).value()
 
-export const getActions = () => actions.values()
+export const getActions = () => actions.values().value()
 
 /*///////////////////////////*/
 /*| action input validation |*/

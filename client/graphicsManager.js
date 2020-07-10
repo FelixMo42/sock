@@ -13,7 +13,7 @@ import {
 
 import { getMoves } from "./movesManager"
 import { meter, drawTime, bgColor } from "./config"
-import { drawTree, drawWall } from "./art"
+import { drawTree, drawWall, drawPlanks } from "./art"
 
 // set the backgroud color
 app.renderer.backgroundColor = bgColor
@@ -32,6 +32,7 @@ const addLayer = () => app.stage.addChild(new PIXI.Container())
 
 const layers = {
 	underlay: addLayer(),
+	wood:     addLayer(),
 	player:   addLayer(),
 	wall:     addLayer(),
 	tree:     addLayer(),
@@ -70,10 +71,6 @@ const addPlayer = (sprite, w, h, player) => {
 	}
 }
 
-const addTree = (sprite, w, h) => {
-	drawTree(sprite, w / 2, h / 2)
-}
-
 const addWall = (sprite, w, h) => {
 	sprite.beginFill(0x1e2021)
 	sprite.drawRect(0, 0, w, h)
@@ -83,6 +80,17 @@ const addWall = (sprite, w, h) => {
 	drawWall(sprite, w, h, 0, h)
 	drawWall(sprite, w, 0, w, h)
 	drawWall(sprite, 0, h, 0, 0)
+}
+
+const addTree = (sprite, w, h) => drawTree(sprite, w / 2, h / 2)
+
+const addWood = (sprite) => drawPlanks(sprite, 0, 0)
+
+let handlers = {
+	"player" : addPlayer,
+	"tree" : addTree,
+	"wall" : addWall,
+	"wood" : addWood
 }
 
 /*////////////////*/
@@ -101,9 +109,7 @@ on(objectCreated, object => {
 	let w = sprite.w = toGlobal(object.width)
 	let h = sprite.h = toGlobal(object.height)
 
-	if (object.type == "player") addPlayer(sprite, w, h, object)
-	if (object.type == "tree")   addTree(sprite, w, h, object)
-	if (object.type == "wall")   addWall(sprite, w, h, object)
+	handlers[object.type](sprite, w, h, object)
 
 	// add the sprite to the right layer
 	layers[object.type].addChild(sprite)

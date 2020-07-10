@@ -8,7 +8,7 @@ import {
     objectCreated, objectUpdated, objectRemoved,
     getObject, getObjects, hasObject
 } from "./core/object.js"
-import { getAction, applyAction } from "./core/action.js"
+import { getAction, getActions, applyAction } from "./core/action.js"
 
 // the min and max time for how long object have to select moves
 const minTime = 500
@@ -109,6 +109,14 @@ const emit = barter(server, on => [
     on(enter, addClient),
     on(leave, () => {})
 ])
+
+/*////////////*/
+/*| game api |*/
+/*////////////*/
+
+app.get("/actions", (_req, res) => {
+    res.send( JSON.stringify( getActions() ) )
+})
 
 /*/////////////////*/
 /*| initilization |*/

@@ -53,12 +53,12 @@ on(mouseUp, button => {
 
     // what move are we trying to do?
     let action = getSelectedMove()
-    
+
     // if were trying to move then do that
-    if ( action == "walk" ) goToPoint( mouseTile() )
+    if ( action.name == "move" ) goToPoint( mouseTile() )
 
     // outher wise attack!
-    else attack( mouseTile(), action )
+    else attack( mouseTile(), action.name )
 })
 
 /*/////////////////////*/
@@ -93,13 +93,15 @@ const mouseTile = () => ({
 /*| Move selection stuff |*/
 /*////////////////////////*/
 
-// what possible moves could we do
-export const knowMoves = [
-    "walk",
-    "slice",
-    "shoot",
-    "heal"
-]
+// the list of possible moves we could do
+export const knowMoves = []
+
+// ask the server to had us the list
+fetch("actions").then(res => res.json()).then(actions => {
+    for (let action of actions) if (action.id != "wait") knowMoves.push(action)
+
+    fire(selectedNewMove, getSelectedMove())
+})
 
 // the currently selected move
 let selected = 0

@@ -5,37 +5,61 @@
     <script src="/test/art.js"></script>
     <script src="/test/svg.js"></script>
 
-    <div style="padding: 10px; outline: auto;" id="abc"></div>
-
     <script>
-        // const width  = 750
-        // const height = 750
-        // const app = new PIXI.Application({ width, height })
-        // document.getElementById("body").appendChild(app.view)
+        const width  = 750
+        const height = 750
+        const app = new PIXI.Application({ width, height })
+        document.getElementById("body").appendChild(app.view)
 
-        // // set the backgroud color
-        // app.renderer.backgroundColor = 0x5F9A62
+        function drawLine(g, x1, y1, x2, y2, {off=1, segs=4}={}) {
+            let offset = range(-off, off)
 
-        // drawSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 100 100">
-        //     ${ path([
-        //         moveTo(-10, -10),
-        //         bezierCurveTo(20,20 , 40,20 , 50,10)
-        //     ]) }
-        // </svg>`)
+            for (let seg = 0; seg <= segs; seg++) {
+                g.lineTo(
+                    interpolate(seg/segs, x1, x2) + offset(),
+                    interpolate(seg/segs, y1, y2) + offset()
+                )
+            }
+        }
 
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+        function drawPlank(g, x, y, w, h) {
+            g.beginFill(0x946c5d)
 
-        let el = document.createElementNS("http://www.w3.org/2000/svg", "path")
-        el.setAttribute("d", "M -10 -10 C 20 20, 40 20, 50 10")
-        el.setAttribute("stroke", "black")
-        el.setAttribute("fill", "transparent")
+            g.moveTo(x, y)
 
-        svg.append(el)
+            drawLine(g, x, y, w, y)
+            drawLine(g, w, y, w, h)
+            drawLine(g, w, h, x, h)
+            drawLine(g, x, h, x, y)
 
-        document.getElementById("abc").appendChild(svg)
+            g.lineTo(x, y)
 
-        var rectBBox = svg.getBBox()
+            g.endFill()
+        }
 
-        console.log(rectBBox)
+        function drawPlanks(g, bx, by) {
+            for (let i of [0, 2, 1]) {
+                let x = bx + range(5, 10)() + 5 * (i % 2)
+                let y = by + range(10, 15)() * i + 5
+                let w = x + range(35, 45)()
+                let h = y + range(15, 10)()
+
+                drawPlank(g, x, y, w, h)
+            }
+        }
+
+        let g = new PIXI.Graphics()
+
+        g.lineStyle(3, 0x000000)
+
+        drawPlanks(g, 0, 0)
+        drawPlanks(g, 60, 0)
+        drawPlanks(g, 60, 60)
+        drawPlanks(g, 0, 60)
+
+        app.stage.addChild(g)
+
+        // set the backgroud color
+        app.renderer.backgroundColor = 0x5F9A62
     </script>
 </body>

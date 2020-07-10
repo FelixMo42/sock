@@ -9,6 +9,7 @@
 	import { knowMoves, getSelectedMove, selectedNewMove } from './movesManager'
 	import "./graphicsManager"
 
+	let moves = knowMoves
 	let selectedMove = getSelectedMove()
 
 	let percenthp = tweened(0, {
@@ -21,6 +22,7 @@
 	})
 	
 	on(selectedNewMove, move => {
+		moves = knowMoves
 		selectedMove = move
 	})
 
@@ -53,8 +55,8 @@
 				<hr/>
 
 				<div id="moves">
-					{#each knowMoves as move, i}
-						<p class:selected={move == selectedMove}>{i + 1}. {move}</p>
+					{#each moves as move, i}
+						<p class:selected={move == selectedMove}>{i + 1}. {move.name}</p>
 					{/each}
 				</div>
 			</div>
