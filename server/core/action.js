@@ -27,18 +27,18 @@ export const getActions = () => actions.values()
 /*///////////////////////////*/
 
 export const isValidInput = (source, input, expect) => {
+    if (expect.type == "vector") {
+        if ( !("x" in input && "y" in input) ) return false
+
+        return inRange(source.position, input, expect.range)
+    }
+
     if (expect.type == "object") {
         if ( !hasObject(input) ) return false
 
         let object = getObject(input)
 
         return inRange(source.position, object.position, expect.range)
-    }
-
-    if (expect.type == "vector") {
-        if ( !("x" in input && "y" in input) ) return false
-
-        return inRange(source.position, input, expect.range)
     }
 
     console.error(`unkown input type ${expect.type}`)

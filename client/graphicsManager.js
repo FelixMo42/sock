@@ -133,11 +133,11 @@ on(objectUpdated, ({ object, update }) => {
 
 	// show that the hp has updated
 	if ("hp" in update) {
-		//  make a colored tag showing how the players health has changed
-		let text = new PIXI.Text(update.hp - player.hp, {
+		//  make a colored tag showing how the objects health has changed
+		let text = new PIXI.Text(update.hp - object.hp, {
 			fontFamily: 'Arial',
 			fontSize: 18,
-			fill: (update.hp > player.hp) ? 0x4ee44e : 0xff0000
+			fill: (update.hp > object.hp) ? 0x4ee44e : 0xff0000
 		})
 
 		// center the text
@@ -186,11 +186,17 @@ app.ticker.add(() => {
 	moves.clear()
 	moves.lineStyle(3, 0x000000)
 
-	let sprite = getSprite(getOurPlayer())
+	let player = getOurPlayer()
+	let sprite = getSprite(player)
 
 	moves.moveTo(
 		sprite.x + sprite.w / 2,
 		sprite.y + sprite.h / 2
+	)
+
+	moves.lineTo(
+		toGlobal(player.position.x) + sprite.w / 2,
+		toGlobal(player.position.y) + sprite.h / 2
 	)
 
 	for (let move of getMoves()) {

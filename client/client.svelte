@@ -33,10 +33,10 @@
 	on(objectCreated, updatePlayer)
 	on(objectUpdateDone, updatePlayer)
 
-	on(objectRemoved, () => {
+	on(objectRemoved, when(isOurPlayer, () => {
 		percenthp.set(0)
 		percentmp.set(0)
-	})
+	}))
 </script>
 
 <main>
