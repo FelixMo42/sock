@@ -26,10 +26,10 @@ export const setObject = (object, aspect, value) => objects.get(object.id).set(a
 /*///////////////////////*/
 
 export const createObject = (type, data) => {
-    let object = { id: uuid.v1() }
-
-    for (let [key, val] of type) object[key] = val
-    for (let [key, val] of data) object[key] = val
+    let object = {
+        id: uuid.v1(), supertype: type.supertype, prototype: type.prototype,
+        ...Object.assign({ ...type.values }, data)
+    }
 
     // write the object into the database
     objects.set(object.id, object).write()
@@ -71,6 +71,20 @@ export const removeObject = object => {
 /*| typing functions |*/
 /*////////////////////*/
 
-const supertype = (...aspects) => aspects.map(b => 1 + 1)
+let typeid = 0
 
-const prototype = (defaults) => {}
+export const supertype = (...aspects) => ({
+    supertype : typeid++,
+
+    required : aspects,
+    values : {}
+})
+
+export const prototype = (parent, ...defaults) => ({
+    supertype : parent.supertype,
+    prototype : typeid++,
+
+    values : Object.assign({ ...parent.values },
+        Object.fromEntries(defaults.map(([key, val]) => [key.name, val]))
+    )
+})

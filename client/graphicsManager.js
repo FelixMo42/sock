@@ -30,13 +30,18 @@ const toGlobal = n => n * meter
 
 const addLayer = () => app.stage.addChild(new PIXI.Container())
 
+const PLAYER = 1
+const WALL   = 2
+const TREE   = 3
+const WOOD   = 4
+
 const layers = {
-	underlay: addLayer(),
-	wood:     addLayer(),
-	player:   addLayer(),
-	wall:     addLayer(),
-	tree:     addLayer(),
-	overlay:  addLayer(),
+	underlay   : addLayer(),
+	[ WOOD ]   : addLayer(),
+	[ PLAYER ] : addLayer(),
+	[ WALL ]   : addLayer(),
+	[ TREE ]   :  addLayer(),
+	overlay    :  addLayer(),
 }
 
 /*////////////*/
@@ -87,10 +92,10 @@ const addTree = (sprite, w, h) => drawTree(sprite, w / 2, h / 2)
 const addWood = (sprite) => drawPlanks(sprite, 0, 0)
 
 let handlers = {
-	"player" : addPlayer,
-	"tree" : addTree,
-	"wall" : addWall,
-	"wood" : addWood
+	[ PLAYER ] : addPlayer,
+	[ TREE ]   : addTree,
+	[ WALL ]   : addWall,
+	[ WOOD ]   : addWood
 }
 
 /*////////////////*/
@@ -106,13 +111,15 @@ on(objectCreated, object => {
 	sprite.x = toGlobal(object.position.x)
 	sprite.y = toGlobal(object.position.y)
 
-	let w = sprite.w = toGlobal(object.width)
-	let h = sprite.h = toGlobal(object.height)
+	let w = sprite.w = toGlobal(object.size.x)
+	let h = sprite.h = toGlobal(object.size.y)
 
-	handlers[object.type](sprite, w, h, object)
+	console.log(object.prototype)
+
+	handlers[object.prototype](sprite, w, h, object)
 
 	// add the sprite to the right layer
-	layers[object.type].addChild(sprite)
+	layers[object.prototype].addChild(sprite)
 
 	// keep a refrence to it so we can find it again
 	sprites.set(object, sprite)
@@ -147,7 +154,7 @@ on(objectUpdated, ({ object, update }) => {
 		text.anchor.x = 0.5
 
 		// position the text on top of the sprite
-		text.x = sprite.x
+		text.x = sprite.x + sprite.w / 2
 		text.y = sprite.y - 20
 
 		// make the text slide up

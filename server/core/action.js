@@ -91,7 +91,7 @@ export const applyAction = (action, source, inputs, changes) => {
 
     let resolve = Resolver(action, source, inputs)
 
-    let target = resolve( action.targets )
+    let target = resolve(action.targets)
 
     for (let [effect, value] of action.effects) applyEffect(effect, resolve(value), target, changes)
 }

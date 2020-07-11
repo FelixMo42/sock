@@ -6,8 +6,8 @@ const MAX_SEARCH_SIZE = 100000
 export const Vector = (x, y) => ({x, y})
 
 const objectIncludes = (object, {x, y}) =>
-    x >= object.position.x && x < object.position.x + object.width &&
-    y >= object.position.y && y < object.position.y + object.height
+    x >= object.position.x && x < object.position.x + object.size.x &&
+    y >= object.position.y && y < object.position.y + object.size.y
 
 const isWalkable = position => {
     for (let object of objects.values()) {

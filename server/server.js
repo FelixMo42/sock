@@ -1,6 +1,7 @@
 import { on } from "eventmonger"
 import express from "express"
 import { createServer } from "http"
+import fs from "fs"
 
 import { isEmptyPosition, wait, random } from "./util/util.js"
 import barter, { enter, leave, reply }   from "./util/barter.js"
@@ -10,6 +11,7 @@ import {
     getObject, getObjects, hasObject
 } from "./core/object.js"
 import { getAction, getActions, applyAction } from "./core/action.js"
+import { player } from "./game/main.js"
 
 // the min and max time for how long object have to select moves
 const minTime = 500
@@ -87,7 +89,7 @@ const spawnPlayer = id => {
     while ( !isEmptyPosition(position) ) position = { x: random(1, 5), y: random(1, 5) }
 
     // make the object
-    return createObject({ id, position, type: "player" })
+    return createObject(player, { id, position })
 }
 
 const addClient = (client, {ids}) => {
