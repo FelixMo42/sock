@@ -1,4 +1,4 @@
-import { getObjects } from "./core/object.js"
+import { getObjects } from "../core/object.js"
 
 export const wait = ms => new Promise(done => setTimeout(done, ms))
 

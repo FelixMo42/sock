@@ -1,5 +1,7 @@
-import { inRange } from "../util.js"
-import { actions } from "../database.js"
+import low from 'lowdb'
+import FileSync from 'lowdb/adapters/FileSync.js'
+
+import { inRange } from "../util/util.js"
 import { applyEffect } from "./effect.js"
 import { getObject, hasObject } from "./object.js"
 
@@ -15,6 +17,8 @@ import { getObject, hasObject } from "./object.js"
 /*//////////////////////*/
 /*| database functions |*/
 /*//////////////////////*/
+
+const actions = low(new FileSync("./.actions.json"))
 
 export const getAction = id => actions.get(id).value()
 

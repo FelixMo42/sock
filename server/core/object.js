@@ -1,27 +1,35 @@
+import low from 'lowdb'
+import FileSync from 'lowdb/adapters/FileSync.js'
 import uuid from "uuid"
 import { Event, fire }  from "eventmonger"
-import { objects } from "../database.js"
 
 export const objectCreated = Event()
 export const objectUpdated = Event()
 export const objectRemoved = Event()
 
+/*//////////////////////*/
+/*| database functions |*/
+/*//////////////////////*/
+
+const objects = low(new FileSync("./.objects.json"))
+
+export const getObject = id => objects.get(id).value()
+
+export const hasObject = id => objects.has(id).value()
+
+export const getObjects = () => objects.values().value()
+
+export const setObject = (object, aspect, value) => objects.get(object.id).set(aspect.name, value).write()
+
 /*///////////////////////*/
 /*| lifecycle functions |*/
 /*///////////////////////*/
 
-export const createObject = config => {
-    let object = {
-        // set the defaults
-        id: uuid.v1(),
-        position: {x: 0, y: 0},
-        hp: 100, maxhp: 100,
-        mp: 100, maxmp: 100,
-        width: 1, height: 1,
+export const createObject = (type, data) => {
+    let object = { id: uuid.v1() }
 
-        // load in the overrides
-        ...config
-    }
+    for (let [key, val] of type) object[key] = val
+    for (let [key, val] of data) object[key] = val
 
     // write the object into the database
     objects.set(object.id, object).write()
@@ -59,11 +67,10 @@ export const removeObject = object => {
     objects.unset(object.id).write()
 }
 
-/*//////////////////////*/
-/*| database functions |*/
-/*//////////////////////*/
+/*////////////////////*/
+/*| typing functions |*/
+/*////////////////////*/
 
-export const getObject = id => objects.get(id).value()
-export const hasObject = id => objects.has(id).value()
-export const getObjects = () => objects.values().value()
-export const setObject = (object, aspect, value) => objects.get(object.id).set(aspect.name, value).write()
+const supertype = (...aspects) => aspects.map(b => 1 + 1)
+
+const prototype = (defaults) => {}

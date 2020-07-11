@@ -1,8 +1,9 @@
 import { on } from "eventmonger"
 import express from "express"
 import { createServer } from "http"
-import { isEmptyPosition, wait, random } from "./util.js"
-import barter, { enter, leave, reply } from "./barter.js"
+
+import { isEmptyPosition, wait, random } from "./util/util.js"
+import barter, { enter, leave, reply }   from "./util/barter.js"
 import {
     createObject, updateObject,
     objectCreated, objectUpdated, objectRemoved,

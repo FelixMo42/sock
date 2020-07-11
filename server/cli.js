@@ -1,5 +1,5 @@
 import commander from 'commander'
-import { isEmptyPosition, random } from "./util.js"
+import { isEmptyPosition, random } from "./util/util.js"
 import { createObject } from "./core/object.js"
 
 let size = 25

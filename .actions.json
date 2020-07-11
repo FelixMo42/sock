@@ -1,15 +1,13 @@
 {
     "wait": {
-        "id": "wait",
-        "name": "wait",
+        "id": "wait", "name": "wait",
 
         "expects": [],
 
         "effects": []
     },
     "move": {
-        "id": "move",
-        "name": "move",
+        "id": "move", "name": "move",
 
         "expects": [{
             "type": "vector",
@@ -23,8 +21,7 @@
         ]
     },
     "slice": {
-        "id": "slice",
-        "name": "slice",
+        "id": "slice", "name": "slice",
         
         "expects": [{
             "type": "object",
@@ -38,8 +35,7 @@
         ]
     },
     "shoot": {
-        "id": "shoot",
-        "name": "shoot",
+        "id": "shoot", "name": "shoot",
 
         "expects": [{
             "type": "object",
@@ -53,8 +49,7 @@
         ]
     },
     "heal": {
-        "id": "heal",
-        "name": "heal",
+        "id": "heal", "name": "heal",
 
         "expects": [{
             "type": "object",
@@ -65,6 +60,20 @@
         
         "effects": [
             [ "damage", 15 ]
+        ]
+    },
+    "pickup": {
+        "id": "pickup", "name": "pickup",
+
+        "expects": [{
+            "type": "object",
+            "range": 1
+        }],
+
+        "targets": "inputs.0",
+
+        "effects": [
+            
         ]
     }
 }
